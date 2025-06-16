@@ -1,4 +1,3 @@
-
 import { Activity, Brain, Hammer, BookOpen, HelpCircle, Wifi, WifiOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,12 +31,6 @@ const menuItems = [
     icon: BookOpen,
     badge: null,
     external: true
-  },
-  {
-    id: "help",
-    label: "Help",
-    icon: HelpCircle,
-    badge: null
   }
 ];
 

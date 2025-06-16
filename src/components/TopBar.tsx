@@ -13,11 +13,7 @@ export function TopBar() {
 
   return (
     <header className="h-16 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex items-center justify-between h-full px-6">
-        <div className="flex items-center space-x-4">
-          <h2 className="text-lg font-semibold text-foreground">Quality Assurance Dashboard</h2>
-        </div>
-        
+      <div className="flex items-center justify-end h-full px-6">
         <div className="flex items-center space-x-4">
           <Button
             variant="ghost"

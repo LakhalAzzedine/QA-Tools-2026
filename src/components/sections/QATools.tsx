@@ -13,7 +13,8 @@ import {
   Accessibility, 
   Gauge, 
   MessageCircle, 
-  Bug 
+  Bug,
+  FileCode
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -73,6 +74,13 @@ const tools = [
     description: "Identify root causes of defects",
     icon: Bug,
     color: "bg-red-500"
+  },
+  {
+    id: "karate-script-writer",
+    name: "Karate Script Writer",
+    description: "Generate Karate API test scripts",
+    icon: FileCode,
+    color: "bg-teal-500"
   }
 ];
 
