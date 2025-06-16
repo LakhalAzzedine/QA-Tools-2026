@@ -1,10 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Activity, CheckCircle, XCircle, Clock, Search } from "lucide-react";
+import { EndpointDetailsModal } from "../EndpointDetailsModal";
 
 interface Endpoint {
   id: string;
@@ -39,6 +39,8 @@ export function EndpointsMonitor() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTeam, setSelectedTeam] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [selectedEndpoint, setSelectedEndpoint] = useState<Endpoint | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const filteredEndpoints = endpoints.filter(endpoint => {
     const matchesSearch = endpoint.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -86,6 +88,16 @@ export function EndpointsMonitor() {
   };
 
   const statusCounts = getStatusCounts();
+
+  const handleCardClick = (endpoint: Endpoint) => {
+    setSelectedEndpoint(endpoint);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedEndpoint(null);
+  };
 
   return (
     <div className="space-y-6">
@@ -146,7 +158,11 @@ export function EndpointsMonitor() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {filteredEndpoints.map((endpoint) => (
-          <Card key={endpoint.id} className="hover:shadow-lg transition-shadow duration-200">
+          <Card 
+            key={endpoint.id} 
+            className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:scale-105 transform"
+            onClick={() => handleCardClick(endpoint)}
+          >
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium">{endpoint.name}</CardTitle>
@@ -195,6 +211,12 @@ export function EndpointsMonitor() {
           </div>
         </CardContent>
       </Card>
+
+      <EndpointDetailsModal 
+        endpoint={selectedEndpoint}
+        isOpen={isModalOpen}
+        onClose={closeModal}
+      />
     </div>
   );
 }
