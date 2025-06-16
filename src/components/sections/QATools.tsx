@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useState } from "react";
 import { 
   FileCheck, 
@@ -16,6 +15,7 @@ import {
   MessageCircle, 
   Bug 
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const tools = [
   {
@@ -79,8 +79,8 @@ const tools = [
 export function QATools() {
   const [selectedTool, setSelectedTool] = useState<any>(null);
   const [input, setInput] = useState("");
-  const [response, setResponse] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   const handleSendPrompt = async () => {
     if (!input.trim() || !selectedTool) return;
@@ -100,150 +100,105 @@ export function QATools() {
       });
       
       const data = await response.json();
-      setResponse(data.response || "Response received from LLM API");
+      const responseText = data.response || "Response received from LLM API";
+      
+      // Show response in a toast popup
+      toast({
+        title: `${selectedTool.name} Response`,
+        description: responseText,
+        duration: 10000,
+      });
+      
     } catch (error) {
       console.error('Error sending prompt:', error);
-      setResponse("Error: Could not connect to LLM API");
+      toast({
+        title: "Error",
+        description: "Could not connect to LLM API",
+        variant: "destructive",
+        duration: 5000,
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const openToolModal = (tool: any) => {
+  const selectTool = (tool: any) => {
     setSelectedTool(tool);
     setInput("");
-    setResponse("");
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">QA AI Tools</h1>
+        <h1 className="text-2xl font-bold text-foreground">Quality Assurance Dashboard</h1>
         <p className="text-muted-foreground">AI-powered tools to enhance your quality assurance workflow</p>
       </div>
 
       {/* Horizontal Toolbar */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">AI Tools Toolbar</CardTitle>
+          <CardTitle className="text-lg">QA AI Tools</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
             {tools.map((tool) => {
               const Icon = tool.icon;
+              const isSelected = selectedTool?.id === tool.id;
               return (
-                <Dialog key={tool.id}>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center space-x-2 h-10 px-3"
-                      onClick={() => openToolModal(tool)}
-                    >
-                      <div className={`w-4 h-4 ${tool.color} rounded flex items-center justify-center`}>
-                        <Icon className="w-3 h-3 text-white" />
-                      </div>
-                      <span className="text-sm font-medium">{tool.name}</span>
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle className="flex items-center space-x-2">
-                        <div className={`w-6 h-6 ${tool.color} rounded flex items-center justify-center`}>
-                          <Icon className="w-4 h-4 text-white" />
-                        </div>
-                        <span>{tool.name}</span>
-                      </DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <p className="text-sm text-muted-foreground">{tool.description}</p>
-                      
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Input Prompt:</label>
-                        <Textarea
-                          placeholder={`Enter your ${tool.name.toLowerCase()} request...`}
-                          value={input}
-                          onChange={(e) => setInput(e.target.value)}
-                          className="min-h-[100px]"
-                        />
-                      </div>
-
-                      <Button 
-                        onClick={handleSendPrompt}
-                        disabled={!input.trim() || isLoading}
-                        className="w-full"
-                      >
-                        {isLoading ? "Sending..." : "Send to LLM"}
-                      </Button>
-
-                      {response && (
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Response:</label>
-                          <div className="p-3 bg-muted rounded-md">
-                            <pre className="text-sm whitespace-pre-wrap">{response}</pre>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                <Button
+                  key={tool.id}
+                  variant={isSelected ? "default" : "outline"}
+                  size="sm"
+                  className="flex items-center space-x-2 h-10 px-3"
+                  onClick={() => selectTool(tool)}
+                >
+                  <div className={`w-4 h-4 ${tool.color} rounded flex items-center justify-center`}>
+                    <Icon className="w-3 h-3 text-white" />
+                  </div>
+                  <span className="text-sm font-medium">{tool.name}</span>
+                </Button>
               );
             })}
           </div>
         </CardContent>
       </Card>
 
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="h-12 justify-start">
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Open QA Chatbot
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>QA Chatbot</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <Textarea
-                    placeholder="Ask any QA-related question..."
-                    className="min-h-[100px]"
-                  />
-                  <Button className="w-full">Send Message</Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-            
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="h-12 justify-start">
-                  <FileCheck className="w-4 h-4 mr-2" />
-                  Generate Test Suite
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Test Suite Generator</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <Textarea
-                    placeholder="Describe the feature or requirements for test suite generation..."
-                    className="min-h-[100px]"
-                  />
-                  <Button className="w-full">Generate Test Suite</Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Selected Tool Interface */}
+      {selectedTool && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <div className={`w-6 h-6 ${selectedTool.color} rounded flex items-center justify-center`}>
+                <selectedTool.icon className="w-4 h-4 text-white" />
+              </div>
+              <span>{selectedTool.name}</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">{selectedTool.description}</p>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Input Prompt:</label>
+                <Textarea
+                  placeholder={`Enter your ${selectedTool.name.toLowerCase()} request...`}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  className="min-h-[100px]"
+                />
+              </div>
+
+              <Button 
+                onClick={handleSendPrompt}
+                disabled={!input.trim() || isLoading}
+                className="w-full"
+              >
+                {isLoading ? "Sending..." : "Send to LLM"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
