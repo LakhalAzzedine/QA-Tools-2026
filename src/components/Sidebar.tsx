@@ -1,5 +1,5 @@
 
-import { Activity, Brain, Hammer, BookOpen, HelpCircle, Settings, Wifi, WifiOff } from "lucide-react";
+import { Activity, Brain, Hammer, BookOpen, HelpCircle, Wifi, WifiOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
@@ -37,12 +37,6 @@ const menuItems = [
     id: "help",
     label: "Help",
     icon: HelpCircle,
-    badge: null
-  },
-  {
-    id: "settings",
-    label: "Settings",
-    icon: Settings,
     badge: null
   }
 ];

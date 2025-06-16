@@ -3,7 +3,6 @@ import { EndpointsMonitor } from "./sections/EndpointsMonitor";
 import { QATools } from "./sections/QATools";
 import { BuildPipelines } from "./sections/BuildPipelines";
 import { HelpSection } from "./sections/HelpSection";
-import { SettingsSection } from "./sections/SettingsSection";
 
 interface DashboardContentProps {
   activeSection: string;
@@ -20,8 +19,6 @@ export function DashboardContent({ activeSection }: DashboardContentProps) {
         return <BuildPipelines />;
       case "help":
         return <HelpSection />;
-      case "settings":
-        return <SettingsSection />;
       default:
         return <EndpointsMonitor />;
     }

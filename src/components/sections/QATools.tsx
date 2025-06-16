@@ -129,11 +129,6 @@ export function QATools() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Quality Assurance Dashboard</h1>
-        <p className="text-muted-foreground">AI-powered tools to enhance your quality assurance workflow</p>
-      </div>
-
       {/* Horizontal Toolbar */}
       <Card>
         <CardHeader>
