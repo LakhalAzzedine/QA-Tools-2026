@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { ToolsToolbar } from "./ToolsToolbar";
 import { ToolContent } from "./ToolContent";
-import { EndpointConfig } from "./EndpointConfig";
 import { Tool } from "@/config/toolsConfig";
 
 export function QATools() {
@@ -10,22 +9,15 @@ export function QATools() {
   const [importedFiles, setImportedFiles] = useState<File[]>([]);
   const [jiraStoryData, setJiraStoryData] = useState<any>(null);
   const [urlData, setUrlData] = useState<any>(null);
-  const [showEndpointConfig, setShowEndpointConfig] = useState(false);
 
   const selectTool = (tool: Tool) => {
     setSelectedTool(tool);
-    setShowEndpointConfig(false);
   };
 
   return (
     <div className="space-y-6">
       {/* Horizontal Toolbar */}
       <ToolsToolbar selectedTool={selectedTool} onToolSelect={selectTool} />
-
-      {/* Endpoint Configuration */}
-      {showEndpointConfig && (
-        <EndpointConfig onConfigUpdate={() => setShowEndpointConfig(false)} />
-      )}
 
       {/* Tool Content */}
       {selectedTool && selectedTool.hasSpecialLayout && (
@@ -37,7 +29,6 @@ export function QATools() {
           onJiraStoryFetched={setJiraStoryData}
           onUrlProcessed={setUrlData}
           onFilesProcessed={setImportedFiles}
-          onConfigOpen={() => setShowEndpointConfig(true)}
         />
       )}
     </div>

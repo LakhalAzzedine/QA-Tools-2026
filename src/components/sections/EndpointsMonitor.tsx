@@ -5,8 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { Activity, CheckCircle, XCircle, Clock, Search } from "lucide-react";
+import { Activity, CheckCircle, XCircle, Clock, Search, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { EndpointDetailsModal } from "../EndpointDetailsModal";
+import { defaultEndpointConfig } from "@/config/backendConfig";
 
 interface Endpoint {
   id: string;
@@ -18,39 +21,69 @@ interface Endpoint {
   team: string;
 }
 
-const teams = [
-  "Team Alpha", "Team Beta", "Team Gamma", "Team Delta", "Team Echo",
-  "Team Foxtrot", "Team Golf", "Team Hotel", "Team India", "Team Juliet"
-];
-
 const CARDS_PER_PAGE = 8;
 
 export function EndpointsMonitor() {
-  const [endpoints, setEndpoints] = useState<Endpoint[]>([
-    // Sample data for 10 teams - adding more endpoints for pagination demo
-    { id: "1", name: "TSDM API", url: "https://api.tsdm.example.com", status: "up", responseTime: 245, lastCheck: "2 minutes ago", team: "Team Alpha" },
-    { id: "2", name: "Navigator API", url: "https://api.navigator.example.com", status: "up", responseTime: 187, lastCheck: "1 minute ago", team: "Team Beta" },
-    { id: "3", name: "Auth Service", url: "https://auth.example.com", status: "warning", responseTime: 892, lastCheck: "3 minutes ago", team: "Team Gamma" },
-    { id: "4", name: "Database Connector", url: "https://db.example.com", status: "down", responseTime: 0, lastCheck: "5 minutes ago", team: "Team Delta" },
-    { id: "5", name: "Payment Gateway", url: "https://pay.example.com", status: "up", responseTime: 320, lastCheck: "1 minute ago", team: "Team Echo" },
-    { id: "6", name: "Analytics API", url: "https://analytics.example.com", status: "warning", responseTime: 650, lastCheck: "4 minutes ago", team: "Team Foxtrot" },
-    { id: "7", name: "File Storage", url: "https://files.example.com", status: "up", responseTime: 150, lastCheck: "2 minutes ago", team: "Team Golf" },
-    { id: "8", name: "Notification Service", url: "https://notify.example.com", status: "down", responseTime: 0, lastCheck: "6 minutes ago", team: "Team Hotel" },
-    { id: "9", name: "Search Engine", url: "https://search.example.com", status: "up", responseTime: 410, lastCheck: "1 minute ago", team: "Team India" },
-    { id: "10", name: "Logging Service", url: "https://logs.example.com", status: "warning", responseTime: 780, lastCheck: "3 minutes ago", team: "Team Juliet" },
-    { id: "11", name: "Cache Service", url: "https://cache.example.com", status: "up", responseTime: 89, lastCheck: "1 minute ago", team: "Team Alpha" },
-    { id: "12", name: "Media API", url: "https://media.example.com", status: "up", responseTime: 234, lastCheck: "2 minutes ago", team: "Team Beta" },
-    { id: "13", name: "Backup Service", url: "https://backup.example.com", status: "down", responseTime: 0, lastCheck: "7 minutes ago", team: "Team Gamma" },
-    { id: "14", name: "Config API", url: "https://config.example.com", status: "warning", responseTime: 567, lastCheck: "3 minutes ago", team: "Team Delta" },
-    { id: "15", name: "Monitoring API", url: "https://monitor.example.com", status: "up", responseTime: 123, lastCheck: "1 minute ago", team: "Team Echo" }
-  ]);
-
+  const [endpoints, setEndpoints] = useState<Endpoint[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTeam, setSelectedTeam] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedEndpoint, setSelectedEndpoint] = useState<Endpoint | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [teams, setTeams] = useState<string[]>([]);
+  const { toast } = useToast();
+
+  const fetchEndpoints = async () => {
+    setIsLoading(true);
+    try {
+      const savedConfig = localStorage.getItem("qaToolsEndpointConfig");
+      let config = defaultEndpointConfig;
+      
+      if (savedConfig) {
+        const parsedConfig = JSON.parse(savedConfig);
+        config = { ...defaultEndpointConfig, ...parsedConfig };
+      }
+
+      const response = await fetch(`${config.baseUrl}/endpoints-monitor`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setEndpoints(data.endpoints || []);
+      
+      // Extract unique teams from endpoints
+      const uniqueTeams = [...new Set(data.endpoints?.map((endpoint: Endpoint) => endpoint.team) || [])];
+      setTeams(uniqueTeams);
+
+      toast({
+        title: "Endpoints Updated",
+        description: "Endpoint monitoring data refreshed successfully",
+      });
+
+    } catch (error) {
+      console.error('Error fetching endpoints:', error);
+      toast({
+        title: "Error",
+        description: "Could not fetch endpoint data. Check SVC cluster connection.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEndpoints();
+  }, []);
 
   const filteredEndpoints = endpoints.filter(endpoint => {
     const matchesSearch = endpoint.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -142,9 +175,15 @@ export function EndpointsMonitor() {
           <h1 className="text-2xl font-bold text-foreground">Endpoints Monitor</h1>
           <p className="text-muted-foreground">Real-time health monitoring for all endpoints across teams</p>
         </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-          <span className="text-sm text-muted-foreground">Live Monitoring</span>
+        <div className="flex items-center space-x-4">
+          <Button onClick={fetchEndpoints} disabled={isLoading} variant="outline">
+            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-sm text-muted-foreground">Live Monitoring</span>
+          </div>
         </div>
       </div>
 
@@ -192,44 +231,70 @@ export function EndpointsMonitor() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {paginatedEndpoints.map((endpoint) => (
-          <Card 
-            key={endpoint.id} 
-            className={`hover:shadow-lg transition-all duration-200 cursor-pointer hover:scale-105 transform relative ${getStatusGlow(endpoint.status)}`}
-            onClick={() => handleCardClick(endpoint)}
-          >
-            {/* Heartbeat indicator */}
-            <div className="absolute top-2 right-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            </div>
-            
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium">{endpoint.name}</CardTitle>
-                {getStatusIcon(endpoint.status)}
-              </div>
-              <div className="text-xs text-muted-foreground">{endpoint.team}</div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="text-xs text-muted-foreground truncate">
-                {endpoint.url}
+      {/* Loading State */}
+      {isLoading && (
+        <Card>
+          <CardContent className="flex items-center justify-center py-8">
+            <RefreshCw className="w-6 h-6 animate-spin mr-2" />
+            <span>Loading endpoints...</span>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* No Data State */}
+      {!isLoading && endpoints.length === 0 && (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-8">
+            <Activity className="w-12 h-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Endpoints Found</h3>
+            <p className="text-muted-foreground text-center">
+              Unable to fetch endpoint data from the SVC cluster. Please check your connection and try refreshing.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Endpoints Grid */}
+      {!isLoading && paginatedEndpoints.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {paginatedEndpoints.map((endpoint) => (
+            <Card 
+              key={endpoint.id} 
+              className={`hover:shadow-lg transition-all duration-200 cursor-pointer hover:scale-105 transform relative ${getStatusGlow(endpoint.status)}`}
+              onClick={() => handleCardClick(endpoint)}
+            >
+              {/* Heartbeat indicator */}
+              <div className="absolute top-2 right-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               </div>
               
-              <div className="flex items-center justify-between">
-                {getStatusBadge(endpoint.status)}
-                <span className="text-xs text-muted-foreground">
-                  {endpoint.responseTime > 0 ? `${endpoint.responseTime}ms` : "N/A"}
-                </span>
-              </div>
-              
-              <div className="text-xs text-muted-foreground">
-                Last check: {endpoint.lastCheck}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-medium">{endpoint.name}</CardTitle>
+                  {getStatusIcon(endpoint.status)}
+                </div>
+                <div className="text-xs text-muted-foreground">{endpoint.team}</div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="text-xs text-muted-foreground truncate">
+                  {endpoint.url}
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  {getStatusBadge(endpoint.status)}
+                  <span className="text-xs text-muted-foreground">
+                    {endpoint.responseTime > 0 ? `${endpoint.responseTime}ms` : "N/A"}
+                  </span>
+                </div>
+                
+                <div className="text-xs text-muted-foreground">
+                  Last check: {endpoint.lastCheck}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Pagination */}
       {totalPages > 1 && (
@@ -266,27 +331,30 @@ export function EndpointsMonitor() {
         </div>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">System Overview</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{statusCounts.up}</div>
-              <div className="text-sm text-muted-foreground">Healthy Endpoints</div>
+      {/* System Overview */}
+      {!isLoading && endpoints.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">System Overview</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">{statusCounts.up}</div>
+                <div className="text-sm text-muted-foreground">Healthy Endpoints</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-yellow-600">{statusCounts.warning}</div>
+                <div className="text-sm text-muted-foreground">Warning Status</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-red-600">{statusCounts.down}</div>
+                <div className="text-sm text-muted-foreground">Down Endpoints</div>
+              </div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-yellow-600">{statusCounts.warning}</div>
-              <div className="text-sm text-muted-foreground">Warning Status</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-red-600">{statusCounts.down}</div>
-              <div className="text-sm text-muted-foreground">Down Endpoints</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       <EndpointDetailsModal 
         endpoint={selectedEndpoint}

@@ -28,6 +28,7 @@ export interface EndpointConfig {
   jiraIntegrationEndpoint: string;
   urlProcessingEndpoint: string;
   fileProcessingEndpoint: string;
+  endpointsMonitorEndpoint: string;
 }
 
 // Default endpoint configuration - easily configurable
@@ -45,7 +46,8 @@ export const defaultEndpointConfig: EndpointConfig = {
   smartspecScriptEndpoint: "/smartspec-script",
   jiraIntegrationEndpoint: "/jira-integration",
   urlProcessingEndpoint: "/url-processing",
-  fileProcessingEndpoint: "/file-processing"
+  fileProcessingEndpoint: "/file-processing",
+  endpointsMonitorEndpoint: "/endpoints-monitor"
 };
 
 // Tool-specific prompts configuration
@@ -154,7 +156,8 @@ export const getToolEndpointUrl = (toolId: string, config: EndpointConfig): stri
     'chatbot': config.chatbotEndpoint,
     'defect-analyzer': config.defectAnalyzerEndpoint,
     'karate-script-writer': config.karateScriptEndpoint,
-    'smartspec-script-writer': config.smartspecScriptEndpoint
+    'smartspec-script-writer': config.smartspecScriptEndpoint,
+    'endpoints-monitor': config.endpointsMonitorEndpoint
   };
   
   return `${config.baseUrl}${endpoints[toolId] || ''}`;
