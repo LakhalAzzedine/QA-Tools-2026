@@ -6,14 +6,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileJson, Download, Zap } from "lucide-react";
+import { FileJson, Download, Zap, FileExport } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getToolEndpointUrl, buildPromptWithContext } from "@/config/backendConfig";
 import { defaultEndpointConfig } from "@/config/backendConfig";
 
 interface JSONAnalyzerProps {
   jiraData?: any;
-  urlData?: any;
   onConfigOpen: () => void;
 }
 
@@ -25,7 +24,7 @@ interface AnalysisResult {
   issues: string;
 }
 
-export function JSONAnalyzer({ jiraData, urlData, onConfigOpen }: JSONAnalyzerProps) {
+export function JSONAnalyzer({ jiraData, onConfigOpen }: JSONAnalyzerProps) {
   const [json1Input, setJson1Input] = useState("");
   const [json2Input, setJson2Input] = useState("");
   const [analysisResults, setAnalysisResults] = useState<AnalysisResult[]>([]);
@@ -68,7 +67,7 @@ export function JSONAnalyzer({ jiraData, urlData, onConfigOpen }: JSONAnalyzerPr
       }
 
       const endpointUrl = getToolEndpointUrl("json-analyzer", config);
-      const prompt = buildPromptWithContext("json-analyzer", `JSON 1:\n${json1Input}\n\nJSON 2:\n${json2Input}`, jiraData, urlData);
+      const prompt = buildPromptWithContext("json-analyzer", `JSON 1:\n${json1Input}\n\nJSON 2:\n${json2Input}`, jiraData);
       
       console.log(`Analyzing JSON via ${endpointUrl}`);
       console.log("Prompt:", prompt);
@@ -92,7 +91,7 @@ export function JSONAnalyzer({ jiraData, urlData, onConfigOpen }: JSONAnalyzerPr
       
       const result = await response.json();
       
-      // Store the full LLM response for HTML export
+      // Store the full LLM response for export
       setLlmResponse(result.response || result.analysis || "No analysis provided");
       
       // Parse analysis results if structured data is provided
@@ -257,6 +256,76 @@ export function JSONAnalyzer({ jiraData, urlData, onConfigOpen }: JSONAnalyzerPr
     });
   };
 
+  const exportToJSON = () => {
+    const exportData = {
+      timestamp: new Date().toISOString(),
+      inputs: {
+        json1: json1Input,
+        json2: json2Input
+      },
+      analysis: llmResponse,
+      comparisonTable: analysisResults
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `json-analysis-${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "JSON Export",
+      description: "Analysis data exported as JSON file",
+    });
+  };
+
+  const generateBasicComparison = (json1: string, json2: string): AnalysisResult[] => {
+    try {
+      const obj1 = JSON.parse(json1);
+      const obj2 = JSON.parse(json2);
+      const results: AnalysisResult[] = [];
+      
+      const allKeys = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
+      
+      allKeys.forEach(key => {
+        const val1 = obj1[key];
+        const val2 = obj2[key];
+        const val1Str = val1 !== undefined ? JSON.stringify(val1) : "undefined";
+        const val2Str = val2 !== undefined ? JSON.stringify(val2) : "undefined";
+        
+        let comparison = "Same";
+        let issues = "None";
+        
+        if (val1 === undefined) {
+          comparison = "Missing in JSON 1";
+          issues = "Field only exists in JSON 2";
+        } else if (val2 === undefined) {
+          comparison = "Missing in JSON 2";
+          issues = "Field only exists in JSON 1";
+        } else if (JSON.stringify(val1) !== JSON.stringify(val2)) {
+          comparison = "Different";
+          issues = "Values differ between JSONs";
+        }
+        
+        results.push({
+          field: key,
+          json1Value: val1Str,
+          json2Value: val2Str,
+          comparison,
+          issues
+        });
+      });
+      
+      return results;
+    } catch (error) {
+      return [];
+    }
+  };
+
   return (
     <div className="space-y-4">
       <Card>
@@ -268,9 +337,6 @@ export function JSONAnalyzer({ jiraData, urlData, onConfigOpen }: JSONAnalyzerPr
             <span>JSON Analyzer</span>
             {jiraData && (
               <Badge variant="secondary">Jira: {jiraData.id}</Badge>
-            )}
-            {urlData && (
-              <Badge variant="secondary">URL: {urlData.title}</Badge>
             )}
           </CardTitle>
         </CardHeader>
@@ -318,14 +384,17 @@ export function JSONAnalyzer({ jiraData, urlData, onConfigOpen }: JSONAnalyzerPr
                 {isLoading ? "Analyzing JSON..." : "Analyze & Compare JSON"}
               </Button>
               
-              {analysisResults.length > 0 && (
-                <Button 
-                  onClick={exportToHTML}
-                  variant="outline"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Export HTML
-                </Button>
+              {llmResponse && (
+                <div className="flex gap-2">
+                  <Button onClick={exportToHTML} variant="outline">
+                    <Download className="w-4 h-4 mr-2" />
+                    Export HTML
+                  </Button>
+                  <Button onClick={exportToJSON} variant="outline">
+                    <FileExport className="w-4 h-4 mr-2" />
+                    Export JSON
+                  </Button>
+                </div>
               )}
             </div>
           </div>

@@ -7,6 +7,7 @@ import { BulkFileImport } from "./BulkFileImport";
 import { QAChatbot } from "./QAChatbot";
 import { XPathGenerator } from "./XPathGenerator";
 import { JSONAnalyzer } from "./JSONAnalyzer";
+import { TestGenerator } from "./TestGenerator";
 import { Tool } from "@/config/toolsConfig";
 
 interface ToolContentProps {
@@ -56,7 +57,7 @@ export function ToolContent({
     );
   }
 
-  // Special case for json analyzer
+  // Special case for json analyzer (removed URL integration)
   if (selectedTool.id === "json-analyzer") {
     return (
       <div className="space-y-4">
@@ -64,13 +65,26 @@ export function ToolContent({
           {selectedTool.useJiraIntegration && (
             <JiraIntegration onStoryFetched={onJiraStoryFetched} />
           )}
-          {selectedTool.useUrlIntegration && (
-            <UrlIntegration onUrlProcessed={onUrlProcessed} />
-          )}
         </div>
         <JSONAnalyzer 
           jiraData={jiraStoryData}
-          urlData={urlData}
+          onConfigOpen={onConfigOpen}
+        />
+      </div>
+    );
+  }
+
+  // Special case for test generator
+  if (selectedTool.id === "test-generator") {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {selectedTool.useJiraIntegration && (
+            <JiraIntegration onStoryFetched={onJiraStoryFetched} />
+          )}
+        </div>
+        <TestGenerator 
+          jiraData={jiraStoryData}
           onConfigOpen={onConfigOpen}
         />
       </div>

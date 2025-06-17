@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { MousePointer, Copy, Zap } from "lucide-react";
+import { MousePointer, Copy, Zap, Download, FileExport } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getToolEndpointUrl, buildPromptWithContext } from "@/config/backendConfig";
 import { defaultEndpointConfig } from "@/config/backendConfig";
@@ -20,6 +20,7 @@ export function XPathGenerator({ jiraData, urlData, onConfigOpen }: XPathGenerat
   const [htmlInput, setHtmlInput] = useState("");
   const [generatedXPaths, setGeneratedXPaths] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [llmResponse, setLlmResponse] = useState("");
   const { toast } = useToast();
 
   const handleGenerateXPath = async () => {
@@ -34,7 +35,6 @@ export function XPathGenerator({ jiraData, urlData, onConfigOpen }: XPathGenerat
     
     setIsLoading(true);
     try {
-      // Get saved configuration
       const savedConfig = localStorage.getItem("qaToolsEndpointConfig");
       let config = defaultEndpointConfig;
       
@@ -67,6 +67,9 @@ export function XPathGenerator({ jiraData, urlData, onConfigOpen }: XPathGenerat
       
       const result = await response.json();
       
+      // Store the full LLM response for export
+      setLlmResponse(result.response || "No response provided");
+      
       // Assuming the API returns an array of XPath selectors
       if (result.xpaths && Array.isArray(result.xpaths)) {
         setGeneratedXPaths(result.xpaths);
@@ -92,7 +95,6 @@ export function XPathGenerator({ jiraData, urlData, onConfigOpen }: XPathGenerat
         variant: "destructive",
       });
       
-      // Show config button in error
       toast({
         title: "Configuration",
         description: "Click to configure endpoint settings",
@@ -112,6 +114,54 @@ export function XPathGenerator({ jiraData, urlData, onConfigOpen }: XPathGenerat
     toast({
       title: "Copied",
       description: "XPath selector copied to clipboard",
+    });
+  };
+
+  const exportXPaths = (format: 'txt' | 'json') => {
+    if (generatedXPaths.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please generate XPath selectors first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    let content: string;
+    let mimeType: string;
+    let filename: string;
+
+    if (format === 'json') {
+      const exportData = {
+        timestamp: new Date().toISOString(),
+        htmlInput: htmlInput,
+        xpaths: generatedXPaths,
+        llmResponse: llmResponse,
+        jiraData: jiraData,
+        urlData: urlData
+      };
+      content = JSON.stringify(exportData, null, 2);
+      mimeType = 'application/json';
+      filename = `xpath-selectors-${Date.now()}.json`;
+    } else {
+      content = `XPath Selectors Generated on: ${new Date().toLocaleString()}\n\nHTML Input:\n${htmlInput}\n\nGenerated XPaths:\n${generatedXPaths.join('\n')}\n\nLLM Response:\n${llmResponse}`;
+      mimeType = 'text/plain';
+      filename = `xpath-selectors-${Date.now()}.txt`;
+    }
+
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Export Complete",
+      description: `XPath selectors exported as ${format.toUpperCase()} file`,
     });
   };
 
@@ -149,18 +199,33 @@ export function XPathGenerator({ jiraData, urlData, onConfigOpen }: XPathGenerat
               />
             </div>
             
-            <Button 
-              onClick={handleGenerateXPath}
-              disabled={!htmlInput.trim() || isLoading}
-              className="w-full"
-            >
-              {isLoading ? (
-                <Zap className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Zap className="w-4 h-4 mr-2" />
+            <div className="flex gap-2">
+              <Button 
+                onClick={handleGenerateXPath}
+                disabled={!htmlInput.trim() || isLoading}
+                className="flex-1"
+              >
+                {isLoading ? (
+                  <Zap className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Zap className="w-4 h-4 mr-2" />
+                )}
+                {isLoading ? "Generating XPath..." : "Generate XPath Selectors"}
+              </Button>
+              
+              {generatedXPaths.length > 0 && (
+                <div className="flex gap-2">
+                  <Button onClick={() => exportXPaths('txt')} variant="outline">
+                    <Download className="w-4 h-4 mr-2" />
+                    Export TXT
+                  </Button>
+                  <Button onClick={() => exportXPaths('json')} variant="outline">
+                    <FileExport className="w-4 h-4 mr-2" />
+                    Export JSON
+                  </Button>
+                </div>
               )}
-              {isLoading ? "Generating XPath..." : "Generate XPath Selectors"}
-            </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
