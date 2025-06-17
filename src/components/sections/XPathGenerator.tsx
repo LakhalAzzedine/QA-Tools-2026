@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { MousePointer, Copy, Zap, Download, FileExport } from "lucide-react";
+import { MousePointer, Copy, Zap, Download, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getToolEndpointUrl, buildPromptWithContext } from "@/config/backendConfig";
 import { defaultEndpointConfig } from "@/config/backendConfig";
@@ -220,7 +220,7 @@ export function XPathGenerator({ jiraData, urlData, onConfigOpen }: XPathGenerat
                     Export TXT
                   </Button>
                   <Button onClick={() => exportXPaths('json')} variant="outline">
-                    <FileExport className="w-4 h-4 mr-2" />
+                    <FileText className="w-4 h-4 mr-2" />
                     Export JSON
                   </Button>
                 </div>

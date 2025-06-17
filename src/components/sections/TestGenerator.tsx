@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Download, Zap, FileExport } from "lucide-react";
+import { TestTube, Zap, Download, FileText, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getToolEndpointUrl, buildPromptWithContext } from "@/config/backendConfig";
 import { defaultEndpointConfig } from "@/config/backendConfig";
@@ -16,7 +16,7 @@ interface TestGeneratorProps {
 }
 
 export function TestGenerator({ jiraData, onConfigOpen }: TestGeneratorProps) {
-  const [requirementsInput, setRequirementsInput] = useState("");
+  const [testInput, setTestInput] = useState("");
   const [generatedTests, setGeneratedTests] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isCreatingJira, setIsCreatingJira] = useState(false);
@@ -24,10 +24,10 @@ export function TestGenerator({ jiraData, onConfigOpen }: TestGeneratorProps) {
   const { toast } = useToast();
 
   const handleGenerateTests = async () => {
-    if (!requirementsInput.trim()) {
+    if (!testInput.trim()) {
       toast({
         title: "Error",
-        description: "Please enter requirements to generate test cases.",
+        description: "Please enter test requirements to generate test cases.",
         variant: "destructive",
       });
       return;
@@ -44,7 +44,7 @@ export function TestGenerator({ jiraData, onConfigOpen }: TestGeneratorProps) {
       }
 
       const endpointUrl = getToolEndpointUrl("test-generator", config);
-      const prompt = buildPromptWithContext("test-generator", requirementsInput, jiraData);
+      const prompt = buildPromptWithContext("test-generator", testInput, jiraData);
       
       console.log(`Generating tests via ${endpointUrl}`);
       console.log("Prompt:", prompt);
@@ -56,7 +56,7 @@ export function TestGenerator({ jiraData, onConfigOpen }: TestGeneratorProps) {
         },
         body: JSON.stringify({
           prompt: prompt,
-          requirements: requirementsInput,
+          testRequirements: testInput,
           toolId: "test-generator"
         })
       });
@@ -66,11 +66,12 @@ export function TestGenerator({ jiraData, onConfigOpen }: TestGeneratorProps) {
       }
       
       const result = await response.json();
+      
       setGeneratedTests(result.response || result.testCases || "No test cases generated");
       
       toast({
-        title: "Tests Generated",
-        description: "Test cases generated successfully",
+        title: "Test Cases Generated",
+        description: "Test cases have been generated successfully",
       });
       
     } catch (error) {
@@ -95,7 +96,7 @@ export function TestGenerator({ jiraData, onConfigOpen }: TestGeneratorProps) {
     }
   };
 
-  const handleCreateInJira = async () => {
+  const createJiraTestCase = async () => {
     if (!generatedTests) {
       toast({
         title: "Error",
@@ -115,15 +116,18 @@ export function TestGenerator({ jiraData, onConfigOpen }: TestGeneratorProps) {
         config = { ...defaultEndpointConfig, ...parsedConfig };
       }
 
-      const response = await fetch(`${config.baseUrl}/api/jira/create-test-cases`, {
+      const endpointUrl = getToolEndpointUrl("jira-integration", config);
+      
+      const response = await fetch(endpointUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          action: "createTestCase",
           testCases: generatedTests,
           jiraData: jiraData,
-          requirements: requirementsInput
+          toolId: "test-generator"
         })
       });
       
@@ -134,15 +138,15 @@ export function TestGenerator({ jiraData, onConfigOpen }: TestGeneratorProps) {
       const result = await response.json();
       
       toast({
-        title: "Success",
-        description: `Test cases created in Jira: ${result.ticketIds?.join(', ') || 'Created successfully'}`,
+        title: "Jira Test Case Created",
+        description: `Test case created in Jira: ${result.issueKey || 'Success'}`,
       });
       
     } catch (error) {
-      console.error('Error creating Jira test cases:', error);
+      console.error('Error creating Jira test case:', error);
       toast({
         title: "Error",
-        description: "Could not create test cases in Jira. Check SVC cluster connection.",
+        description: "Could not create test case in Jira. Check configuration.",
         variant: "destructive",
       });
     } finally {
@@ -150,7 +154,7 @@ export function TestGenerator({ jiraData, onConfigOpen }: TestGeneratorProps) {
     }
   };
 
-  const handleCreateInQTest = async () => {
+  const createQTestCase = async () => {
     if (!generatedTests) {
       toast({
         title: "Error",
@@ -170,15 +174,18 @@ export function TestGenerator({ jiraData, onConfigOpen }: TestGeneratorProps) {
         config = { ...defaultEndpointConfig, ...parsedConfig };
       }
 
-      const response = await fetch(`${config.baseUrl}/api/qtest/create-test-cases`, {
+      const endpointUrl = getToolEndpointUrl("qtest-integration", config);
+      
+      const response = await fetch(endpointUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          action: "createTestCase",
           testCases: generatedTests,
           jiraData: jiraData,
-          requirements: requirementsInput
+          toolId: "test-generator"
         })
       });
       
@@ -189,15 +196,15 @@ export function TestGenerator({ jiraData, onConfigOpen }: TestGeneratorProps) {
       const result = await response.json();
       
       toast({
-        title: "Success",
-        description: `Test cases created in QTest: ${result.testCaseIds?.join(', ') || 'Created successfully'}`,
+        title: "QTest Case Created",
+        description: `Test case created in QTest: ${result.testCaseId || 'Success'}`,
       });
       
     } catch (error) {
-      console.error('Error creating QTest test cases:', error);
+      console.error('Error creating QTest case:', error);
       toast({
         title: "Error",
-        description: "Could not create test cases in QTest. Check SVC cluster connection.",
+        description: "Could not create test case in QTest. Check configuration.",
         variant: "destructive",
       });
     } finally {
@@ -222,15 +229,15 @@ export function TestGenerator({ jiraData, onConfigOpen }: TestGeneratorProps) {
     if (format === 'json') {
       const exportData = {
         timestamp: new Date().toISOString(),
-        requirements: requirementsInput,
-        testCases: generatedTests,
+        testRequirements: testInput,
+        generatedTests: generatedTests,
         jiraData: jiraData
       };
       content = JSON.stringify(exportData, null, 2);
       mimeType = 'application/json';
       filename = `test-cases-${Date.now()}.json`;
     } else {
-      content = `Test Cases Generated on: ${new Date().toLocaleString()}\n\nRequirements:\n${requirementsInput}\n\nGenerated Test Cases:\n${generatedTests}`;
+      content = `Test Cases Generated on: ${new Date().toLocaleString()}\n\nTest Requirements:\n${testInput}\n\nGenerated Test Cases:\n${generatedTests}`;
       mimeType = 'text/plain';
       filename = `test-cases-${Date.now()}.txt`;
     }
@@ -257,7 +264,7 @@ export function TestGenerator({ jiraData, onConfigOpen }: TestGeneratorProps) {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center space-x-2">
             <div className="w-6 h-6 bg-green-500 rounded flex items-center justify-center">
-              <FileText className="w-4 h-4 text-white" />
+              <TestTube className="w-4 h-4 text-white" />
             </div>
             <span>Test Generator</span>
             {jiraData && (
@@ -267,17 +274,17 @@ export function TestGenerator({ jiraData, onConfigOpen }: TestGeneratorProps) {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-4">
-            Generate comprehensive test cases from requirements. Create test cases directly in Jira or QTest.
+            Generate comprehensive test cases from requirements, user stories, or specifications. Export or create directly in Jira/QTest.
           </p>
           
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="requirements-input">Requirements / User Story</Label>
+              <Label htmlFor="test-input">Test Requirements</Label>
               <Textarea
-                id="requirements-input"
-                placeholder="Enter your requirements, user story, or feature description here..."
-                value={requirementsInput}
-                onChange={(e) => setRequirementsInput(e.target.value)}
+                id="test-input"
+                placeholder="Enter your test requirements, user stories, or specifications here..."
+                value={testInput}
+                onChange={(e) => setTestInput(e.target.value)}
                 className="min-h-[200px]"
               />
             </div>
@@ -285,7 +292,7 @@ export function TestGenerator({ jiraData, onConfigOpen }: TestGeneratorProps) {
             <div className="flex gap-2">
               <Button 
                 onClick={handleGenerateTests}
-                disabled={!requirementsInput.trim() || isLoading}
+                disabled={!testInput.trim() || isLoading}
                 className="flex-1"
               >
                 {isLoading ? (
@@ -303,59 +310,63 @@ export function TestGenerator({ jiraData, onConfigOpen }: TestGeneratorProps) {
                     Export TXT
                   </Button>
                   <Button onClick={() => exportTests('json')} variant="outline">
-                    <FileExport className="w-4 h-4 mr-2" />
+                    <FileText className="w-4 h-4 mr-2" />
                     Export JSON
                   </Button>
                 </div>
               )}
             </div>
-          </div>
-        </CardContent>
-      </Card>
 
-      {generatedTests && (
-        <>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Generated Test Cases</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="bg-muted p-4 rounded-lg mb-4">
-                <pre className="text-sm whitespace-pre-wrap">{generatedTests}</pre>
-              </div>
-              
-              <div className="flex gap-2">
+            {generatedTests && (
+              <div className="flex gap-2 pt-2">
                 <Button 
-                  onClick={handleCreateInJira}
+                  onClick={createJiraTestCase}
                   disabled={isCreatingJira}
                   variant="outline"
                   className="flex-1"
                 >
                   {isCreatingJira ? (
-                    <Zap className="w-4 h-4 mr-2 animate-spin" />
+                    <Send className="w-4 h-4 mr-2 animate-spin" />
                   ) : (
-                    <FileText className="w-4 h-4 mr-2" />
+                    <Send className="w-4 h-4 mr-2" />
                   )}
-                  {isCreatingJira ? "Creating in Jira..." : "Create in Jira"}
+                  {isCreatingJira ? "Creating in Jira..." : "Create Test in Jira"}
                 </Button>
                 
                 <Button 
-                  onClick={handleCreateInQTest}
+                  onClick={createQTestCase}
                   disabled={isCreatingQTest}
                   variant="outline"
                   className="flex-1"
                 >
                   {isCreatingQTest ? (
-                    <Zap className="w-4 h-4 mr-2 animate-spin" />
+                    <Send className="w-4 h-4 mr-2 animate-spin" />
                   ) : (
-                    <FileText className="w-4 h-4 mr-2" />
+                    <Send className="w-4 h-4 mr-2" />
                   )}
-                  {isCreatingQTest ? "Creating in QTest..." : "Create in QTest"}
+                  {isCreatingQTest ? "Creating in QTest..." : "Create Test in QTest"}
                 </Button>
               </div>
-            </CardContent>
-          </Card>
-        </>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {generatedTests && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Generated Test Cases</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-muted p-4 rounded-lg">
+              <pre className="text-sm whitespace-pre-wrap">{generatedTests}</pre>
+            </div>
+            
+            <div className="mt-4 text-xs text-muted-foreground">
+              <p>Test cases generated successfully. Use the buttons above to export or create in Jira/QTest.</p>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

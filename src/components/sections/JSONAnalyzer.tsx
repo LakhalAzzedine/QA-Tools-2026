@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileJson, Download, Zap, FileExport } from "lucide-react";
+import { FileJson, Download, Zap, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getToolEndpointUrl, buildPromptWithContext } from "@/config/backendConfig";
 import { defaultEndpointConfig } from "@/config/backendConfig";
@@ -31,6 +31,49 @@ export function JSONAnalyzer({ jiraData, onConfigOpen }: JSONAnalyzerProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [llmResponse, setLlmResponse] = useState("");
   const { toast } = useToast();
+
+  const generateBasicComparison = (json1: string, json2: string): AnalysisResult[] => {
+    try {
+      const obj1 = JSON.parse(json1);
+      const obj2 = JSON.parse(json2);
+      const results: AnalysisResult[] = [];
+      
+      const allKeys = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
+      
+      allKeys.forEach(key => {
+        const val1 = obj1[key];
+        const val2 = obj2[key];
+        const val1Str = val1 !== undefined ? JSON.stringify(val1) : "undefined";
+        const val2Str = val2 !== undefined ? JSON.stringify(val2) : "undefined";
+        
+        let comparison = "Same";
+        let issues = "None";
+        
+        if (val1 === undefined) {
+          comparison = "Missing in JSON 1";
+          issues = "Field only exists in JSON 2";
+        } else if (val2 === undefined) {
+          comparison = "Missing in JSON 2";
+          issues = "Field only exists in JSON 1";
+        } else if (JSON.stringify(val1) !== JSON.stringify(val2)) {
+          comparison = "Different";
+          issues = "Values differ between JSONs";
+        }
+        
+        results.push({
+          field: key,
+          json1Value: val1Str,
+          json2Value: val2Str,
+          comparison,
+          issues
+        });
+      });
+      
+      return results;
+    } catch (error) {
+      return [];
+    }
+  };
 
   const handleAnalyzeJSON = async () => {
     if (!json1Input.trim() || !json2Input.trim()) {
@@ -128,49 +171,6 @@ export function JSONAnalyzer({ jiraData, onConfigOpen }: JSONAnalyzerProps) {
       });
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const generateBasicComparison = (json1: string, json2: string): AnalysisResult[] => {
-    try {
-      const obj1 = JSON.parse(json1);
-      const obj2 = JSON.parse(json2);
-      const results: AnalysisResult[] = [];
-      
-      const allKeys = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
-      
-      allKeys.forEach(key => {
-        const val1 = obj1[key];
-        const val2 = obj2[key];
-        const val1Str = val1 !== undefined ? JSON.stringify(val1) : "undefined";
-        const val2Str = val2 !== undefined ? JSON.stringify(val2) : "undefined";
-        
-        let comparison = "Same";
-        let issues = "None";
-        
-        if (val1 === undefined) {
-          comparison = "Missing in JSON 1";
-          issues = "Field only exists in JSON 2";
-        } else if (val2 === undefined) {
-          comparison = "Missing in JSON 2";
-          issues = "Field only exists in JSON 1";
-        } else if (JSON.stringify(val1) !== JSON.stringify(val2)) {
-          comparison = "Different";
-          issues = "Values differ between JSONs";
-        }
-        
-        results.push({
-          field: key,
-          json1Value: val1Str,
-          json2Value: val2Str,
-          comparison,
-          issues
-        });
-      });
-      
-      return results;
-    } catch (error) {
-      return [];
     }
   };
 
@@ -283,49 +283,6 @@ export function JSONAnalyzer({ jiraData, onConfigOpen }: JSONAnalyzerProps) {
     });
   };
 
-  const generateBasicComparison = (json1: string, json2: string): AnalysisResult[] => {
-    try {
-      const obj1 = JSON.parse(json1);
-      const obj2 = JSON.parse(json2);
-      const results: AnalysisResult[] = [];
-      
-      const allKeys = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
-      
-      allKeys.forEach(key => {
-        const val1 = obj1[key];
-        const val2 = obj2[key];
-        const val1Str = val1 !== undefined ? JSON.stringify(val1) : "undefined";
-        const val2Str = val2 !== undefined ? JSON.stringify(val2) : "undefined";
-        
-        let comparison = "Same";
-        let issues = "None";
-        
-        if (val1 === undefined) {
-          comparison = "Missing in JSON 1";
-          issues = "Field only exists in JSON 2";
-        } else if (val2 === undefined) {
-          comparison = "Missing in JSON 2";
-          issues = "Field only exists in JSON 1";
-        } else if (JSON.stringify(val1) !== JSON.stringify(val2)) {
-          comparison = "Different";
-          issues = "Values differ between JSONs";
-        }
-        
-        results.push({
-          field: key,
-          json1Value: val1Str,
-          json2Value: val2Str,
-          comparison,
-          issues
-        });
-      });
-      
-      return results;
-    } catch (error) {
-      return [];
-    }
-  };
-
   return (
     <div className="space-y-4">
       <Card>
@@ -391,7 +348,7 @@ export function JSONAnalyzer({ jiraData, onConfigOpen }: JSONAnalyzerProps) {
                     Export HTML
                   </Button>
                   <Button onClick={exportToJSON} variant="outline">
-                    <FileExport className="w-4 h-4 mr-2" />
+                    <FileText className="w-4 h-4 mr-2" />
                     Export JSON
                   </Button>
                 </div>
