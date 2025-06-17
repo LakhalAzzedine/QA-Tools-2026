@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { TestTube, Zap, Download, FileText, Send } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { TestTube, Zap, Download, FileText, Send, Upload, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getToolEndpointUrl, buildPromptWithContext } from "@/config/backendConfig";
 import { defaultEndpointConfig } from "@/config/backendConfig";
@@ -21,13 +22,28 @@ export function TestGenerator({ jiraData, onConfigOpen }: TestGeneratorProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isCreatingJira, setIsCreatingJira] = useState(false);
   const [isCreatingQTest, setIsCreatingQTest] = useState(false);
+  const [importedFiles, setImportedFiles] = useState<File[]>([]);
   const { toast } = useToast();
 
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    setImportedFiles(prev => [...prev, ...files]);
+    
+    toast({
+      title: "Files Added",
+      description: `${files.length} file(s) added for processing`,
+    });
+  };
+
+  const removeFile = (index: number) => {
+    setImportedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleGenerateTests = async () => {
-    if (!testInput.trim()) {
+    if (!testInput.trim() && importedFiles.length === 0) {
       toast({
         title: "Error",
-        description: "Please enter test requirements to generate test cases.",
+        description: "Please enter test requirements or import files to generate test cases.",
         variant: "destructive",
       });
       return;
@@ -49,16 +65,38 @@ export function TestGenerator({ jiraData, onConfigOpen }: TestGeneratorProps) {
       console.log(`Generating tests via ${endpointUrl}`);
       console.log("Prompt:", prompt);
       
-      const response = await fetch(endpointUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      // Prepare form data for file upload if files are present
+      let requestBody;
+      let headers: Record<string, string> = {};
+      
+      if (importedFiles.length > 0) {
+        const formData = new FormData();
+        formData.append('prompt', prompt);
+        formData.append('testRequirements', testInput);
+        formData.append('toolId', "test-generator");
+        
+        importedFiles.forEach((file, index) => {
+          formData.append(`file_${index}`, file);
+        });
+        
+        if (jiraData) {
+          formData.append('jiraData', JSON.stringify(jiraData));
+        }
+        
+        requestBody = formData;
+      } else {
+        headers['Content-Type'] = 'application/json';
+        requestBody = JSON.stringify({
           prompt: prompt,
           testRequirements: testInput,
           toolId: "test-generator"
-        })
+        });
+      }
+      
+      const response = await fetch(endpointUrl, {
+        method: 'POST',
+        headers: headers,
+        body: requestBody
       });
       
       if (!response.ok) {
@@ -78,18 +116,8 @@ export function TestGenerator({ jiraData, onConfigOpen }: TestGeneratorProps) {
       console.error('Error generating tests:', error);
       toast({
         title: "Error",
-        description: "Could not generate test cases. Check SVC cluster connection and endpoint configuration.",
+        description: "Could not generate test cases. Check SVC cluster connection.",
         variant: "destructive",
-      });
-      
-      toast({
-        title: "Configuration",
-        description: "Click to configure endpoint settings",
-        action: (
-          <Button size="sm" onClick={onConfigOpen}>
-            Configure
-          </Button>
-        ),
       });
     } finally {
       setIsLoading(false);
@@ -270,6 +298,9 @@ export function TestGenerator({ jiraData, onConfigOpen }: TestGeneratorProps) {
             {jiraData && (
               <Badge variant="secondary">Jira: {jiraData.id}</Badge>
             )}
+            {importedFiles.length > 0 && (
+              <Badge variant="outline">{importedFiles.length} files</Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -288,11 +319,52 @@ export function TestGenerator({ jiraData, onConfigOpen }: TestGeneratorProps) {
                 className="min-h-[200px]"
               />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="file-upload">Import Files (Optional)</Label>
+              <Input
+                id="file-upload"
+                type="file"
+                multiple
+                accept=".txt,.md,.json,.xml,.feature,.java,.js,.ts,.pdf,.docx,.xlsx"
+                onChange={handleFileUpload}
+                className="cursor-pointer"
+              />
+              <p className="text-xs text-muted-foreground">
+                Supported: .txt, .md, .json, .xml, .feature, .java, .js, .ts, .pdf, .docx, .xlsx
+              </p>
+            </div>
+
+            {importedFiles.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium">Imported Files:</h4>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {importedFiles.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
+                      <div className="flex items-center space-x-2">
+                        <FileText className="w-4 h-4" />
+                        <span className="text-sm">{file.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          ({(file.size / 1024).toFixed(1)} KB)
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeFile(index)}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             
             <div className="flex gap-2">
               <Button 
                 onClick={handleGenerateTests}
-                disabled={!testInput.trim() || isLoading}
+                disabled={(!testInput.trim() && importedFiles.length === 0) || isLoading}
                 className="flex-1"
               >
                 {isLoading ? (

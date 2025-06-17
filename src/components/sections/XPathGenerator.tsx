@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { MousePointer, Copy, Zap, Download, FileText } from "lucide-react";
+import { Code, Zap, Download, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getToolEndpointUrl, buildPromptWithContext } from "@/config/backendConfig";
 import { defaultEndpointConfig } from "@/config/backendConfig";
@@ -13,18 +13,16 @@ import { defaultEndpointConfig } from "@/config/backendConfig";
 interface XPathGeneratorProps {
   jiraData?: any;
   urlData?: any;
-  onConfigOpen: () => void;
 }
 
-export function XPathGenerator({ jiraData, urlData, onConfigOpen }: XPathGeneratorProps) {
-  const [htmlInput, setHtmlInput] = useState("");
-  const [generatedXPaths, setGeneratedXPaths] = useState<string[]>([]);
+export function XPathGenerator({ jiraData, urlData }: XPathGeneratorProps) {
+  const [htmlContent, setHtmlContent] = useState("");
+  const [generatedXPath, setGeneratedXPath] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [llmResponse, setLlmResponse] = useState("");
   const { toast } = useToast();
 
   const handleGenerateXPath = async () => {
-    if (!htmlInput.trim()) {
+    if (!htmlContent.trim()) {
       toast({
         title: "Error",
         description: "Please enter HTML content to generate XPath selectors.",
@@ -44,7 +42,7 @@ export function XPathGenerator({ jiraData, urlData, onConfigOpen }: XPathGenerat
       }
 
       const endpointUrl = getToolEndpointUrl("xpath-generator", config);
-      const prompt = buildPromptWithContext("xpath-generator", htmlInput, jiraData, urlData);
+      const prompt = buildPromptWithContext("xpath-generator", htmlContent, jiraData, urlData);
       
       console.log(`Generating XPath via ${endpointUrl}`);
       console.log("Prompt:", prompt);
@@ -56,7 +54,7 @@ export function XPathGenerator({ jiraData, urlData, onConfigOpen }: XPathGenerat
         },
         body: JSON.stringify({
           prompt: prompt,
-          htmlContent: htmlInput,
+          htmlContent: htmlContent,
           toolId: "xpath-generator"
         })
       });
@@ -67,61 +65,30 @@ export function XPathGenerator({ jiraData, urlData, onConfigOpen }: XPathGenerat
       
       const result = await response.json();
       
-      // Store the full LLM response for export
-      setLlmResponse(result.response || "No response provided");
-      
-      // Assuming the API returns an array of XPath selectors
-      if (result.xpaths && Array.isArray(result.xpaths)) {
-        setGeneratedXPaths(result.xpaths);
-      } else if (result.response) {
-        // If response is text, try to extract XPath patterns
-        const xpathPattern = /\/\/[^\s\n]+|\.[^\s\n]+/g;
-        const extractedXPaths = result.response.match(xpathPattern) || [];
-        setGeneratedXPaths(extractedXPaths);
-      } else {
-        setGeneratedXPaths([]);
-      }
+      setGeneratedXPath(result.response || result.xpath || "No XPath generated");
       
       toast({
         title: "XPath Generated",
-        description: `Generated ${generatedXPaths.length} XPath selectors`,
+        description: "XPath selectors have been generated successfully",
       });
       
     } catch (error) {
       console.error('Error generating XPath:', error);
       toast({
         title: "Error",
-        description: "Could not generate XPath selectors. Check SVC cluster connection and endpoint configuration.",
+        description: "Could not generate XPath. Check SVC cluster connection.",
         variant: "destructive",
-      });
-      
-      toast({
-        title: "Configuration",
-        description: "Click to configure endpoint settings",
-        action: (
-          <Button size="sm" onClick={onConfigOpen}>
-            Configure
-          </Button>
-        ),
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const copyToClipboard = (xpath: string) => {
-    navigator.clipboard.writeText(xpath);
-    toast({
-      title: "Copied",
-      description: "XPath selector copied to clipboard",
-    });
-  };
-
-  const exportXPaths = (format: 'txt' | 'json') => {
-    if (generatedXPaths.length === 0) {
+  const exportXPath = (format: 'txt' | 'json') => {
+    if (!generatedXPath) {
       toast({
         title: "Error",
-        description: "Please generate XPath selectors first.",
+        description: "Please generate XPath first.",
         variant: "destructive",
       });
       return;
@@ -134,9 +101,8 @@ export function XPathGenerator({ jiraData, urlData, onConfigOpen }: XPathGenerat
     if (format === 'json') {
       const exportData = {
         timestamp: new Date().toISOString(),
-        htmlInput: htmlInput,
-        xpaths: generatedXPaths,
-        llmResponse: llmResponse,
+        htmlContent: htmlContent,
+        generatedXPath: generatedXPath,
         jiraData: jiraData,
         urlData: urlData
       };
@@ -144,7 +110,7 @@ export function XPathGenerator({ jiraData, urlData, onConfigOpen }: XPathGenerat
       mimeType = 'application/json';
       filename = `xpath-selectors-${Date.now()}.json`;
     } else {
-      content = `XPath Selectors Generated on: ${new Date().toLocaleString()}\n\nHTML Input:\n${htmlInput}\n\nGenerated XPaths:\n${generatedXPaths.join('\n')}\n\nLLM Response:\n${llmResponse}`;
+      content = `XPath Selectors Generated on: ${new Date().toLocaleString()}\n\nHTML Content:\n${htmlContent}\n\nGenerated XPath:\n${generatedXPath}`;
       mimeType = 'text/plain';
       filename = `xpath-selectors-${Date.now()}.txt`;
     }
@@ -171,7 +137,7 @@ export function XPathGenerator({ jiraData, urlData, onConfigOpen }: XPathGenerat
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center space-x-2">
             <div className="w-6 h-6 bg-purple-500 rounded flex items-center justify-center">
-              <MousePointer className="w-4 h-4 text-white" />
+              <Code className="w-4 h-4 text-white" />
             </div>
             <span>XPath Generator</span>
             {jiraData && (
@@ -184,25 +150,25 @@ export function XPathGenerator({ jiraData, urlData, onConfigOpen }: XPathGenerat
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-4">
-            Generate reliable XPath selectors from HTML elements. Paste your HTML code below to get multiple XPath options.
+            Generate robust XPath selectors for web elements. Provide HTML content to get multiple XPath options.
           </p>
           
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="html-input">HTML Element(s)</Label>
+              <Label htmlFor="html-content">HTML Content</Label>
               <Textarea
-                id="html-input"
-                placeholder="Paste your HTML element(s) here..."
-                value={htmlInput}
-                onChange={(e) => setHtmlInput(e.target.value)}
-                className="min-h-[200px] font-mono text-sm"
+                id="html-content"
+                placeholder="Paste your HTML content here to generate XPath selectors..."
+                value={htmlContent}
+                onChange={(e) => setHtmlContent(e.target.value)}
+                className="min-h-[200px]"
               />
             </div>
             
             <div className="flex gap-2">
               <Button 
                 onClick={handleGenerateXPath}
-                disabled={!htmlInput.trim() || isLoading}
+                disabled={!htmlContent.trim() || isLoading}
                 className="flex-1"
               >
                 {isLoading ? (
@@ -210,16 +176,16 @@ export function XPathGenerator({ jiraData, urlData, onConfigOpen }: XPathGenerat
                 ) : (
                   <Zap className="w-4 h-4 mr-2" />
                 )}
-                {isLoading ? "Generating XPath..." : "Generate XPath Selectors"}
+                {isLoading ? "Generating XPath..." : "Generate XPath"}
               </Button>
               
-              {generatedXPaths.length > 0 && (
+              {generatedXPath && (
                 <div className="flex gap-2">
-                  <Button onClick={() => exportXPaths('txt')} variant="outline">
+                  <Button onClick={() => exportXPath('txt')} variant="outline">
                     <Download className="w-4 h-4 mr-2" />
                     Export TXT
                   </Button>
-                  <Button onClick={() => exportXPaths('json')} variant="outline">
+                  <Button onClick={() => exportXPath('json')} variant="outline">
                     <FileText className="w-4 h-4 mr-2" />
                     Export JSON
                   </Button>
@@ -230,29 +196,18 @@ export function XPathGenerator({ jiraData, urlData, onConfigOpen }: XPathGenerat
         </CardContent>
       </Card>
 
-      {generatedXPaths.length > 0 && (
+      {generatedXPath && (
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Generated XPath Selectors</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {generatedXPaths.map((xpath, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                  <code className="text-sm font-mono flex-1 mr-2">{xpath}</code>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => copyToClipboard(xpath)}
-                  >
-                    <Copy className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))}
+            <div className="bg-muted p-4 rounded-lg">
+              <pre className="text-sm whitespace-pre-wrap">{generatedXPath}</pre>
             </div>
             
             <div className="mt-4 text-xs text-muted-foreground">
-              <p>Generated {generatedXPaths.length} XPath selector(s). Click copy button to copy individual selectors.</p>
+              <p>XPath selectors generated successfully. Use the buttons above to export the results.</p>
             </div>
           </CardContent>
         </Card>

@@ -18,7 +18,6 @@ interface ToolContentProps {
   onJiraStoryFetched: (data: any) => void;
   onUrlProcessed: (data: any) => void;
   onFilesProcessed: (files: File[]) => void;
-  onConfigOpen: () => void;
 }
 
 export function ToolContent({
@@ -28,12 +27,11 @@ export function ToolContent({
   urlData,
   onJiraStoryFetched,
   onUrlProcessed,
-  onFilesProcessed,
-  onConfigOpen
+  onFilesProcessed
 }: ToolContentProps) {
   // Special case for chatbot
   if (selectedTool.isChatbot) {
-    return <QAChatbot onConfigOpen={onConfigOpen} />;
+    return <QAChatbot />;
   }
 
   // Special case for xpath generator
@@ -51,7 +49,6 @@ export function ToolContent({
         <XPathGenerator 
           jiraData={jiraStoryData}
           urlData={urlData}
-          onConfigOpen={onConfigOpen}
         />
       </div>
     );
@@ -68,7 +65,6 @@ export function ToolContent({
         </div>
         <JSONAnalyzer 
           jiraData={jiraStoryData}
-          onConfigOpen={onConfigOpen}
         />
       </div>
     );
@@ -85,7 +81,6 @@ export function ToolContent({
         </div>
         <TestGenerator 
           jiraData={jiraStoryData}
-          onConfigOpen={onConfigOpen}
         />
       </div>
     );

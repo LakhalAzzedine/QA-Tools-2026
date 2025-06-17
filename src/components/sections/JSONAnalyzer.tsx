@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,6 @@ import { defaultEndpointConfig } from "@/config/backendConfig";
 
 interface JSONAnalyzerProps {
   jiraData?: any;
-  onConfigOpen: () => void;
 }
 
 interface AnalysisResult {
@@ -24,56 +22,13 @@ interface AnalysisResult {
   issues: string;
 }
 
-export function JSONAnalyzer({ jiraData, onConfigOpen }: JSONAnalyzerProps) {
+export function JSONAnalyzer({ jiraData }: JSONAnalyzerProps) {
   const [json1Input, setJson1Input] = useState("");
   const [json2Input, setJson2Input] = useState("");
   const [analysisResults, setAnalysisResults] = useState<AnalysisResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [llmResponse, setLlmResponse] = useState("");
   const { toast } = useToast();
-
-  const generateBasicComparison = (json1: string, json2: string): AnalysisResult[] => {
-    try {
-      const obj1 = JSON.parse(json1);
-      const obj2 = JSON.parse(json2);
-      const results: AnalysisResult[] = [];
-      
-      const allKeys = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
-      
-      allKeys.forEach(key => {
-        const val1 = obj1[key];
-        const val2 = obj2[key];
-        const val1Str = val1 !== undefined ? JSON.stringify(val1) : "undefined";
-        const val2Str = val2 !== undefined ? JSON.stringify(val2) : "undefined";
-        
-        let comparison = "Same";
-        let issues = "None";
-        
-        if (val1 === undefined) {
-          comparison = "Missing in JSON 1";
-          issues = "Field only exists in JSON 2";
-        } else if (val2 === undefined) {
-          comparison = "Missing in JSON 2";
-          issues = "Field only exists in JSON 1";
-        } else if (JSON.stringify(val1) !== JSON.stringify(val2)) {
-          comparison = "Different";
-          issues = "Values differ between JSONs";
-        }
-        
-        results.push({
-          field: key,
-          json1Value: val1Str,
-          json2Value: val2Str,
-          comparison,
-          issues
-        });
-      });
-      
-      return results;
-    } catch (error) {
-      return [];
-    }
-  };
 
   const handleAnalyzeJSON = async () => {
     if (!json1Input.trim() || !json2Input.trim()) {
@@ -155,22 +110,54 @@ export function JSONAnalyzer({ jiraData, onConfigOpen }: JSONAnalyzerProps) {
       console.error('Error analyzing JSON:', error);
       toast({
         title: "Error",
-        description: "Could not analyze JSON. Check SVC cluster connection and endpoint configuration.",
+        description: "Could not analyze JSON. Check SVC cluster connection.",
         variant: "destructive",
-      });
-      
-      // Show config button in error
-      toast({
-        title: "Configuration",
-        description: "Click to configure endpoint settings",
-        action: (
-          <Button size="sm" onClick={onConfigOpen}>
-            Configure
-          </Button>
-        ),
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const generateBasicComparison = (json1: string, json2: string): AnalysisResult[] => {
+    try {
+      const obj1 = JSON.parse(json1);
+      const obj2 = JSON.parse(json2);
+      const results: AnalysisResult[] = [];
+      
+      const allKeys = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
+      
+      allKeys.forEach(key => {
+        const val1 = obj1[key];
+        const val2 = obj2[key];
+        const val1Str = val1 !== undefined ? JSON.stringify(val1) : "undefined";
+        const val2Str = val2 !== undefined ? JSON.stringify(val2) : "undefined";
+        
+        let comparison = "Same";
+        let issues = "None";
+        
+        if (val1 === undefined) {
+          comparison = "Missing in JSON 1";
+          issues = "Field only exists in JSON 2";
+        } else if (val2 === undefined) {
+          comparison = "Missing in JSON 2";
+          issues = "Field only exists in JSON 1";
+        } else if (JSON.stringify(val1) !== JSON.stringify(val2)) {
+          comparison = "Different";
+          issues = "Values differ between JSONs";
+        }
+        
+        results.push({
+          field: key,
+          json1Value: val1Str,
+          json2Value: val2Str,
+          comparison,
+          issues
+        });
+      });
+      
+      return results;
+    } catch (error) {
+      return [];
     }
   };
 
@@ -288,7 +275,7 @@ export function JSONAnalyzer({ jiraData, onConfigOpen }: JSONAnalyzerProps) {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center space-x-2">
-            <div className="w-6 h-6 bg-blue-500 rounded flex items-center justify-center">
+            <div className="w-6 h-6 bg-orange-500 rounded flex items-center justify-center">
               <FileJson className="w-4 h-4 text-white" />
             </div>
             <span>JSON Analyzer</span>
@@ -299,30 +286,30 @@ export function JSONAnalyzer({ jiraData, onConfigOpen }: JSONAnalyzerProps) {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-4">
-            Compare two JSON objects and analyze their structure, differences, and potential issues. Get detailed analysis in a table format.
+            Compare and analyze two JSON structures to identify differences, missing fields, and data inconsistencies.
           </p>
           
           <div className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="json1-input">JSON 1</Label>
+                <Label htmlFor="json1">JSON 1</Label>
                 <Textarea
-                  id="json1-input"
-                  placeholder="Paste your first JSON object here..."
+                  id="json1"
+                  placeholder="Paste your first JSON here..."
                   value={json1Input}
                   onChange={(e) => setJson1Input(e.target.value)}
-                  className="min-h-[200px] font-mono text-sm"
+                  className="min-h-[200px]"
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="json2-input">JSON 2</Label>
+                <Label htmlFor="json2">JSON 2</Label>
                 <Textarea
-                  id="json2-input"
-                  placeholder="Paste your second JSON object here..."
+                  id="json2"
+                  placeholder="Paste your second JSON here..."
                   value={json2Input}
                   onChange={(e) => setJson2Input(e.target.value)}
-                  className="min-h-[200px] font-mono text-sm"
+                  className="min-h-[200px]"
                 />
               </div>
             </div>
@@ -338,7 +325,7 @@ export function JSONAnalyzer({ jiraData, onConfigOpen }: JSONAnalyzerProps) {
                 ) : (
                   <Zap className="w-4 h-4 mr-2" />
                 )}
-                {isLoading ? "Analyzing JSON..." : "Analyze & Compare JSON"}
+                {isLoading ? "Analyzing..." : "Analyze JSON"}
               </Button>
               
               {llmResponse && (
@@ -358,46 +345,46 @@ export function JSONAnalyzer({ jiraData, onConfigOpen }: JSONAnalyzerProps) {
         </CardContent>
       </Card>
 
+      {/* Comparison Table */}
       {analysisResults.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">JSON Comparison Analysis</CardTitle>
+            <CardTitle className="text-lg">Comparison Results</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Field</TableHead>
-                  <TableHead>JSON 1 Value</TableHead>
-                  <TableHead>JSON 2 Value</TableHead>
-                  <TableHead>Comparison</TableHead>
-                  <TableHead>Issues</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {analysisResults.map((result, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-medium">{result.field}</TableCell>
-                    <TableCell className="font-mono text-sm max-w-xs truncate">{result.json1Value}</TableCell>
-                    <TableCell className="font-mono text-sm max-w-xs truncate">{result.json2Value}</TableCell>
-                    <TableCell>
-                      <Badge variant={result.comparison === "Same" ? "secondary" : "destructive"}>
-                        {result.comparison}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm">{result.issues}</TableCell>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Field</TableHead>
+                    <TableHead>JSON 1 Value</TableHead>
+                    <TableHead>JSON 2 Value</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Issues</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            
-            <div className="mt-4 text-xs text-muted-foreground">
-              <p>Analyzed {analysisResults.length} field(s). Use the Export HTML button to download a detailed report.</p>
+                </TableHeader>
+                <TableBody>
+                  {analysisResults.map((result, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="font-medium">{result.field}</TableCell>
+                      <TableCell className="max-w-xs truncate">{result.json1Value}</TableCell>
+                      <TableCell className="max-w-xs truncate">{result.json2Value}</TableCell>
+                      <TableCell>
+                        <Badge variant={result.comparison === "Same" ? "default" : "destructive"}>
+                          {result.comparison}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{result.issues}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           </CardContent>
         </Card>
       )}
 
+      {/* Analysis Response */}
       {llmResponse && (
         <Card>
           <CardHeader>
@@ -406,6 +393,10 @@ export function JSONAnalyzer({ jiraData, onConfigOpen }: JSONAnalyzerProps) {
           <CardContent>
             <div className="bg-muted p-4 rounded-lg">
               <pre className="text-sm whitespace-pre-wrap">{llmResponse}</pre>
+            </div>
+            
+            <div className="mt-4 text-xs text-muted-foreground">
+              <p>Analysis completed successfully. Use the export buttons above to save the results.</p>
             </div>
           </CardContent>
         </Card>
