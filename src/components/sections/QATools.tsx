@@ -20,6 +20,7 @@ import { FileImport } from "./FileImport";
 import { JiraIntegration } from "./JiraIntegration";
 import { BulkFileImport } from "./BulkFileImport";
 import { UrlIntegration } from "./UrlIntegration";
+import { EndpointConfig } from "./EndpointConfig";
 
 const tools = [
   {

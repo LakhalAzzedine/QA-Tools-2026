@@ -5,14 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Upload, FileText, X, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getToolPrompt, buildPromptWithContext } from "@/config/backendConfig";
 
 interface BulkFileImportProps {
   onFilesProcessed: (files: File[]) => void;
   toolId: string;
   toolName: string;
+  jiraData?: any;
+  urlData?: any;
 }
 
-export function BulkFileImport({ onFilesProcessed, toolId, toolName }: BulkFileImportProps) {
+export function BulkFileImport({ onFilesProcessed, toolId, toolName, jiraData, urlData }: BulkFileImportProps) {
   const [importedFiles, setImportedFiles] = useState<File[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
@@ -36,23 +39,59 @@ export function BulkFileImport({ onFilesProcessed, toolId, toolName }: BulkFileI
     
     setIsProcessing(true);
     try {
+      // Get the saved endpoint configuration
+      const savedConfig = localStorage.getItem("qaToolsEndpointConfig");
+      let baseUrl = "http://localhost:3001";
+      let processFilesEndpoint = "/ProcessFiles";
+      
+      if (savedConfig) {
+        const config = JSON.parse(savedConfig);
+        baseUrl = config.baseUrl || baseUrl;
+        processFilesEndpoint = config.processFilesEndpoint || processFilesEndpoint;
+      }
+
+      // Build the context-aware prompt using the new system
+      const toolPrompt = getToolPrompt(toolId);
+      const contextualPrompt = buildPromptWithContext(
+        toolId,
+        undefined, // No user input for automatic processing
+        jiraData,
+        urlData,
+        importedFiles.map(f => f.name)
+      );
+
       // Send files to backend for automatic processing
       const formData = new FormData();
       importedFiles.forEach((file, index) => {
         formData.append(`file_${index}`, file);
       });
       formData.append('toolId', toolId);
+      formData.append('toolName', toolName);
+      formData.append('prompt', contextualPrompt);
+      formData.append('systemPrompt', toolPrompt?.systemPrompt || '');
       
-      const response = await fetch('/ProcessFiles', {
+      // Add context data
+      if (jiraData) {
+        formData.append('jiraData', JSON.stringify(jiraData));
+      }
+      if (urlData) {
+        formData.append('urlData', JSON.stringify(urlData));
+      }
+      
+      const response = await fetch(`${baseUrl}${processFilesEndpoint}`, {
         method: 'POST',
         body: formData
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       
       const data = await response.json();
       
       toast({
         title: `${toolName} Processing Complete`,
-        description: data.message || "Files processed successfully",
+        description: data.message || "Files processed successfully with AI analysis",
         duration: 10000,
       });
       
@@ -62,7 +101,7 @@ export function BulkFileImport({ onFilesProcessed, toolId, toolName }: BulkFileI
       console.error('Error processing files:', error);
       toast({
         title: "Processing Error",
-        description: "Could not process files. Check backend connection.",
+        description: "Could not process files. Check backend connection and endpoint configuration.",
         variant: "destructive",
       });
     } finally {
@@ -71,7 +110,7 @@ export function BulkFileImport({ onFilesProcessed, toolId, toolName }: BulkFileI
   };
 
   return (
-    <Card className="h-80 w-full">
+    <Card className="h-72 w-full">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center space-x-2 text-base">
           <Upload className="w-4 h-4 text-gray-500" />
@@ -95,12 +134,12 @@ export function BulkFileImport({ onFilesProcessed, toolId, toolName }: BulkFileI
         {importedFiles.length > 0 && (
           <div className="space-y-2">
             <h4 className="text-xs font-medium">Files to Process:</h4>
-            <div className="max-h-24 overflow-y-auto space-y-1">
+            <div className="max-h-20 overflow-y-auto space-y-1">
               {importedFiles.map((file, index) => (
                 <div key={index} className="flex items-center justify-between p-1 bg-muted rounded text-xs">
                   <div className="flex items-center space-x-1">
                     <FileText className="w-3 h-3" />
-                    <span className="truncate max-w-24">{file.name}</span>
+                    <span className="truncate max-w-20">{file.name}</span>
                     <span className="text-xs text-muted-foreground">
                       ({(file.size / 1024).toFixed(1)} KB)
                     </span>
@@ -135,7 +174,7 @@ export function BulkFileImport({ onFilesProcessed, toolId, toolName }: BulkFileI
         </Button>
 
         <div className="text-xs text-muted-foreground">
-          <p>Files will be automatically processed using pre-configured prompts from the backend.</p>
+          <p>Files will be automatically processed using AI-powered prompts specific to {toolName}.</p>
         </div>
       </CardContent>
     </Card>
