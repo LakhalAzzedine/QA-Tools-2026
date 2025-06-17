@@ -6,6 +6,7 @@ import { UrlIntegration } from "./UrlIntegration";
 import { BulkFileImport } from "./BulkFileImport";
 import { QAChatbot } from "./QAChatbot";
 import { XPathGenerator } from "./XPathGenerator";
+import { JSONAnalyzer } from "./JSONAnalyzer";
 import { Tool } from "@/config/toolsConfig";
 
 interface ToolContentProps {
@@ -47,6 +48,27 @@ export function ToolContent({
           )}
         </div>
         <XPathGenerator 
+          jiraData={jiraStoryData}
+          urlData={urlData}
+          onConfigOpen={onConfigOpen}
+        />
+      </div>
+    );
+  }
+
+  // Special case for json analyzer
+  if (selectedTool.id === "json-analyzer") {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {selectedTool.useJiraIntegration && (
+            <JiraIntegration onStoryFetched={onJiraStoryFetched} />
+          )}
+          {selectedTool.useUrlIntegration && (
+            <UrlIntegration onUrlProcessed={onUrlProcessed} />
+          )}
+        </div>
+        <JSONAnalyzer 
           jiraData={jiraStoryData}
           urlData={urlData}
           onConfigOpen={onConfigOpen}
