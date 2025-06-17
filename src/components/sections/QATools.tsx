@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { 
@@ -19,6 +18,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { FileImport } from "./FileImport";
 import { JiraIntegration } from "./JiraIntegration";
+import { BulkFileImport } from "./BulkFileImport";
 
 const tools = [
   {
@@ -26,14 +26,16 @@ const tools = [
     name: "Test Generator",
     description: "Generate comprehensive test cases using AI",
     icon: FileCheck,
-    color: "bg-blue-500"
+    color: "bg-blue-500",
+    hasSpecialLayout: true
   },
   {
     id: "ac-validator",
     name: "AC Validator",
     description: "Validate acceptance criteria completeness",
     icon: CheckSquare,
-    color: "bg-green-500"
+    color: "bg-green-500",
+    hasSpecialLayout: true
   },
   {
     id: "xpath-generator",
@@ -75,21 +77,24 @@ const tools = [
     name: "Defect Analyzer",
     description: "Identify root causes of defects",
     icon: Bug,
-    color: "bg-red-500"
+    color: "bg-red-500",
+    hasSpecialLayout: true
   },
   {
     id: "karate-script-writer",
     name: "Karate Script Writer",
     description: "Generate Karate API test scripts",
     icon: FileCode,
-    color: "bg-teal-500"
+    color: "bg-teal-500",
+    hasSpecialLayout: true
   },
   {
     id: "smartspec-script-writer",
     name: "SmartSpec Script Writer",
     description: "Generate SmartSpec automation scripts",
     icon: FileText,
-    color: "bg-cyan-500"
+    color: "bg-cyan-500",
+    hasSpecialLayout: true
   }
 ];
 
@@ -166,6 +171,112 @@ export function QATools() {
     }
   };
 
+  const renderSpecialLayout = () => {
+    if (!selectedTool?.hasSpecialLayout) return null;
+
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <BulkFileImport 
+          onFilesProcessed={setImportedFiles} 
+          toolId={selectedTool.id}
+          toolName={selectedTool.name}
+        />
+        <JiraIntegration onStoryFetched={setJiraStoryData} />
+      </div>
+    );
+  };
+
+  const renderRegularLayout = () => {
+    if (selectedTool?.hasSpecialLayout) return null;
+
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <FileImport onFilesImported={setImportedFiles} />
+        <JiraIntegration onStoryFetched={setJiraStoryData} />
+      </div>
+    );
+  };
+
+  const renderToolInterface = () => {
+    if (!selectedTool) return null;
+
+    if (selectedTool.hasSpecialLayout) {
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <div className={`w-6 h-6 ${selectedTool.color} rounded flex items-center justify-center`}>
+                <selectedTool.icon className="w-4 h-4 text-white" />
+              </div>
+              <span>{selectedTool.name}</span>
+              {jiraStoryData && (
+                <Badge variant="secondary">Jira: {jiraStoryData.id}</Badge>
+              )}
+              {importedFiles.length > 0 && (
+                <Badge variant="outline">{importedFiles.length} files</Badge>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">{selectedTool.description}</p>
+            <div className="text-sm text-blue-600 bg-blue-50 p-3 rounded">
+              <p>This tool uses automatic processing. Import your files and fetch Jira data - no manual prompt needed!</p>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    // Regular tool interface with manual prompt
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <div className={`w-6 h-6 ${selectedTool.color} rounded flex items-center justify-center`}>
+              <selectedTool.icon className="w-4 h-4 text-white" />
+            </div>
+            <span>{selectedTool.name}</span>
+            {jiraStoryData && selectedTool.id === 'test-generator' && (
+              <Badge variant="secondary">Jira: {jiraStoryData.id}</Badge>
+            )}
+            {importedFiles.length > 0 && (
+              <Badge variant="outline">{importedFiles.length} files</Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">{selectedTool.description}</p>
+            
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <label className="text-sm font-medium">Input Prompt:</label>
+                <span className="text-xs text-muted-foreground">
+                  {input.length}/9000 characters
+                </span>
+              </div>
+              <Textarea
+                placeholder={`Enter your ${selectedTool.name.toLowerCase()} request...`}
+                value={input}
+                onChange={handleInputChange}
+                className="min-h-[100px]"
+                maxLength={9000}
+              />
+            </div>
+
+            <Button 
+              onClick={handleSendPrompt}
+              disabled={!input.trim() || isLoading}
+              className="w-full"
+            >
+              {isLoading ? "Sending..." : "Send to LLM"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Horizontal Toolbar */}
@@ -198,59 +309,15 @@ export function QATools() {
       </Card>
 
       {/* File Import and Jira Integration */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <FileImport onFilesImported={setImportedFiles} />
-        <JiraIntegration onStoryFetched={setJiraStoryData} />
-      </div>
+      {selectedTool && (
+        <>
+          {renderSpecialLayout()}
+          {renderRegularLayout()}
+        </>
+      )}
 
       {/* Selected Tool Interface */}
-      {selectedTool && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <div className={`w-6 h-6 ${selectedTool.color} rounded flex items-center justify-center`}>
-                <selectedTool.icon className="w-4 h-4 text-white" />
-              </div>
-              <span>{selectedTool.name}</span>
-              {jiraStoryData && selectedTool.id === 'test-generator' && (
-                <Badge variant="secondary">Jira: {jiraStoryData.id}</Badge>
-              )}
-              {importedFiles.length > 0 && (
-                <Badge variant="outline">{importedFiles.length} files</Badge>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">{selectedTool.description}</p>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label className="text-sm font-medium">Input Prompt:</label>
-                  <span className="text-xs text-muted-foreground">
-                    {input.length}/9000 characters
-                  </span>
-                </div>
-                <Textarea
-                  placeholder={`Enter your ${selectedTool.name.toLowerCase()} request...`}
-                  value={input}
-                  onChange={handleInputChange}
-                  className="min-h-[100px]"
-                  maxLength={9000}
-                />
-              </div>
-
-              <Button 
-                onClick={handleSendPrompt}
-                disabled={!input.trim() || isLoading}
-                className="w-full"
-              >
-                {isLoading ? "Sending..." : "Send to LLM"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {renderToolInterface()}
     </div>
   );
 }
