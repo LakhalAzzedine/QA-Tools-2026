@@ -3,9 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Play, Rocket, Clock, CheckCircle, XCircle, ExternalLink } from "lucide-react";
+import { Play, Rocket, Clock, CheckCircle, XCircle } from "lucide-react";
 
-// Build URL configuration for different apps and environments
+// Build URL configuration for different apps and environments (kept in backend)
 const buildUrls = {
   tsdm: {
     qa: "https://qa-builds.company.com/tsdm/latest",
@@ -161,32 +161,9 @@ export function BuildPipelines() {
               </Button>
             </div>
 
-            <div className="text-xs text-muted-foreground space-y-1">
+            <div className="text-xs text-muted-foreground">
               <div>Selected: <span className="font-medium">{selectedApp.toUpperCase()}</span> application</div>
-              <div className="flex items-center space-x-1">
-                <span>QA URL:</span>
-                <a 
-                  href={buildUrls[selectedApp as keyof typeof buildUrls].qa} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-blue-500 hover:underline flex items-center space-x-1"
-                >
-                  <span className="truncate max-w-[200px]">{buildUrls[selectedApp as keyof typeof buildUrls].qa}</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              </div>
-              <div className="flex items-center space-x-1">
-                <span>PROD URL:</span>
-                <a 
-                  href={buildUrls[selectedApp as keyof typeof buildUrls].prod} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-blue-500 hover:underline flex items-center space-x-1"
-                >
-                  <span className="truncate max-w-[200px]">{buildUrls[selectedApp as keyof typeof buildUrls].prod}</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              </div>
+              <div>Build URLs configured in backend for deployment automation</div>
             </div>
           </CardContent>
         </Card>

@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +17,8 @@ import {
   FileText
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { FileImport } from "./FileImport";
+import { JiraIntegration } from "./JiraIntegration";
 
 const tools = [
   {
@@ -96,6 +97,8 @@ export function QATools() {
   const [selectedTool, setSelectedTool] = useState<any>(null);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [importedFiles, setImportedFiles] = useState<File[]>([]);
+  const [jiraStoryData, setJiraStoryData] = useState<any>(null);
   const { toast } = useToast();
 
   const handleSendPrompt = async () => {
@@ -103,6 +106,17 @@ export function QATools() {
     
     setIsLoading(true);
     try {
+      // Enhanced prompt with file context and Jira data
+      let enhancedPrompt = input;
+      
+      if (importedFiles.length > 0) {
+        enhancedPrompt += `\n\nImported Files Context: ${importedFiles.map(f => f.name).join(', ')}`;
+      }
+      
+      if (jiraStoryData && selectedTool.id === 'test-generator') {
+        enhancedPrompt += `\n\nJira Story Data:\nTitle: ${jiraStoryData.title}\nDescription: ${jiraStoryData.description}\nAcceptance Criteria:\n${jiraStoryData.acceptanceCriteria.join('\n')}`;
+      }
+      
       // Simulate API call to /SendMessage
       const response = await fetch('/SendMessage', {
         method: 'POST',
@@ -111,7 +125,9 @@ export function QATools() {
         },
         body: JSON.stringify({
           tool: selectedTool.id,
-          prompt: input
+          prompt: enhancedPrompt,
+          files: importedFiles.map(f => ({ name: f.name, size: f.size })),
+          jiraStory: jiraStoryData
         })
       });
       
@@ -181,6 +197,12 @@ export function QATools() {
         </CardContent>
       </Card>
 
+      {/* File Import and Jira Integration */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <FileImport onFilesImported={setImportedFiles} />
+        <JiraIntegration onStoryFetched={setJiraStoryData} />
+      </div>
+
       {/* Selected Tool Interface */}
       {selectedTool && (
         <Card>
@@ -190,6 +212,12 @@ export function QATools() {
                 <selectedTool.icon className="w-4 h-4 text-white" />
               </div>
               <span>{selectedTool.name}</span>
+              {jiraStoryData && selectedTool.id === 'test-generator' && (
+                <Badge variant="secondary">Jira: {jiraStoryData.id}</Badge>
+              )}
+              {importedFiles.length > 0 && (
+                <Badge variant="outline">{importedFiles.length} files</Badge>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
