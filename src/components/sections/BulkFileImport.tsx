@@ -71,21 +71,21 @@ export function BulkFileImport({ onFilesProcessed, toolId, toolName }: BulkFileI
   };
 
   return (
-    <Card className="h-full aspect-square">
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <Upload className="w-5 h-5 text-gray-500" />
+    <Card className="h-80 w-full">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center space-x-2 text-base">
+          <Upload className="w-4 h-4 text-gray-500" />
           <span>Import Files</span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3">
         <div>
           <Input
             type="file"
             multiple
             accept=".txt,.md,.json,.xml,.feature,.java,.js,.ts,.pdf,.docx,.xlsx"
             onChange={handleFileUpload}
-            className="cursor-pointer"
+            className="cursor-pointer text-xs"
           />
           <p className="text-xs text-muted-foreground mt-1">
             Supported: .txt, .md, .json, .xml, .feature, .java, .js, .ts, .pdf, .docx, .xlsx
@@ -94,13 +94,13 @@ export function BulkFileImport({ onFilesProcessed, toolId, toolName }: BulkFileI
 
         {importedFiles.length > 0 && (
           <div className="space-y-2">
-            <h4 className="text-sm font-medium">Files to Process:</h4>
-            <div className="max-h-40 overflow-y-auto space-y-2">
+            <h4 className="text-xs font-medium">Files to Process:</h4>
+            <div className="max-h-24 overflow-y-auto space-y-1">
               {importedFiles.map((file, index) => (
-                <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
-                  <div className="flex items-center space-x-2">
-                    <FileText className="w-4 h-4" />
-                    <span className="text-sm">{file.name}</span>
+                <div key={index} className="flex items-center justify-between p-1 bg-muted rounded text-xs">
+                  <div className="flex items-center space-x-1">
+                    <FileText className="w-3 h-3" />
+                    <span className="truncate max-w-24">{file.name}</span>
                     <span className="text-xs text-muted-foreground">
                       ({(file.size / 1024).toFixed(1)} KB)
                     </span>
@@ -109,8 +109,9 @@ export function BulkFileImport({ onFilesProcessed, toolId, toolName }: BulkFileI
                     variant="ghost"
                     size="sm"
                     onClick={() => removeFile(index)}
+                    className="h-4 w-4 p-0"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-3 h-3" />
                   </Button>
                 </div>
               ))}
@@ -121,13 +122,13 @@ export function BulkFileImport({ onFilesProcessed, toolId, toolName }: BulkFileI
         <Button 
           onClick={handleProcessFiles}
           disabled={importedFiles.length === 0 || isProcessing}
-          className="w-full"
+          className="w-full text-xs h-8"
         >
           {isProcessing ? (
             <>Processing...</>
           ) : (
             <>
-              <Send className="w-4 h-4 mr-2" />
+              <Send className="w-3 h-3 mr-1" />
               Process with {toolName}
             </>
           )}

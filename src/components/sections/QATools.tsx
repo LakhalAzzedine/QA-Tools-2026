@@ -192,18 +192,46 @@ export function QATools() {
     if (!selectedTool?.hasSpecialLayout) return null;
 
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {selectedTool.useJiraIntegration && (
-          <JiraIntegration onStoryFetched={setJiraStoryData} />
-        )}
-        {selectedTool.useUrlIntegration && (
-          <UrlIntegration onUrlProcessed={setUrlData} />
-        )}
-        <BulkFileImport 
-          onFilesProcessed={setImportedFiles} 
-          toolId={selectedTool.id}
-          toolName={selectedTool.name}
-        />
+      <div className="space-y-4">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center space-x-2">
+              <div className={`w-6 h-6 ${selectedTool.color} rounded flex items-center justify-center`}>
+                <selectedTool.icon className="w-4 h-4 text-white" />
+              </div>
+              <span>{selectedTool.name}</span>
+              {jiraStoryData && selectedTool.useJiraIntegration && (
+                <Badge variant="secondary">Jira: {jiraStoryData.id}</Badge>
+              )}
+              {urlData && selectedTool.useUrlIntegration && (
+                <Badge variant="secondary">URL: {urlData.title}</Badge>
+              )}
+              {importedFiles.length > 0 && (
+                <Badge variant="outline">{importedFiles.length} files</Badge>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">{selectedTool.description}</p>
+            <div className="text-sm text-blue-600 bg-blue-50 p-3 rounded">
+              <p>This tool uses automatic processing. Import your files and {selectedTool.useJiraIntegration ? 'fetch Jira data' : 'process URLs'} - no manual prompt needed!</p>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {selectedTool.useJiraIntegration && (
+            <JiraIntegration onStoryFetched={setJiraStoryData} />
+          )}
+          {selectedTool.useUrlIntegration && (
+            <UrlIntegration onUrlProcessed={setUrlData} />
+          )}
+          <BulkFileImport 
+            onFilesProcessed={setImportedFiles} 
+            toolId={selectedTool.id}
+            toolName={selectedTool.name}
+          />
+        </div>
       </div>
     );
   };
@@ -342,7 +370,7 @@ export function QATools() {
       )}
 
       {/* Selected Tool Interface */}
-      {renderToolInterface()}
+      {!selectedTool?.hasSpecialLayout && renderToolInterface()}
     </div>
   );
 }
