@@ -1,0 +1,81 @@
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { JiraIntegration } from "./JiraIntegration";
+import { UrlIntegration } from "./UrlIntegration";
+import { BulkFileImport } from "./BulkFileImport";
+import { QAChatbot } from "./QAChatbot";
+import { Tool } from "@/config/toolsConfig";
+
+interface ToolContentProps {
+  selectedTool: Tool;
+  importedFiles: File[];
+  jiraStoryData: any;
+  urlData: any;
+  onJiraStoryFetched: (data: any) => void;
+  onUrlProcessed: (data: any) => void;
+  onFilesProcessed: (files: File[]) => void;
+  onConfigOpen: () => void;
+}
+
+export function ToolContent({
+  selectedTool,
+  importedFiles,
+  jiraStoryData,
+  urlData,
+  onJiraStoryFetched,
+  onUrlProcessed,
+  onFilesProcessed,
+  onConfigOpen
+}: ToolContentProps) {
+  // Special case for chatbot
+  if (selectedTool.isChatbot) {
+    return <QAChatbot onConfigOpen={onConfigOpen} />;
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center space-x-2">
+            <div className={`w-6 h-6 ${selectedTool.color} rounded flex items-center justify-center`}>
+              <selectedTool.icon className="w-4 h-4 text-white" />
+            </div>
+            <span>{selectedTool.name}</span>
+            {jiraStoryData && selectedTool.useJiraIntegration && (
+              <Badge variant="secondary">Jira: {jiraStoryData.id}</Badge>
+            )}
+            {urlData && selectedTool.useUrlIntegration && (
+              <Badge variant="secondary">URL: {urlData.title}</Badge>
+            )}
+            {importedFiles.length > 0 && (
+              <Badge variant="outline">{importedFiles.length} files</Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">{selectedTool.description}</p>
+          <div className="text-sm text-blue-600 bg-blue-50 p-3 rounded">
+            <p>This tool uses automatic processing. Import your files and {selectedTool.useJiraIntegration ? 'fetch Jira data' : 'process URLs'} - no manual prompt needed!</p>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {selectedTool.useJiraIntegration && (
+          <JiraIntegration onStoryFetched={onJiraStoryFetched} />
+        )}
+        {selectedTool.useUrlIntegration && (
+          <UrlIntegration onUrlProcessed={onUrlProcessed} />
+        )}
+        <BulkFileImport 
+          onFilesProcessed={onFilesProcessed} 
+          toolId={selectedTool.id}
+          toolName={selectedTool.name}
+          jiraData={jiraStoryData}
+          urlData={urlData}
+        />
+      </div>
+    </div>
+  );
+}
