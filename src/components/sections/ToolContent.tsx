@@ -5,6 +5,7 @@ import { JiraIntegration } from "./JiraIntegration";
 import { UrlIntegration } from "./UrlIntegration";
 import { BulkFileImport } from "./BulkFileImport";
 import { QAChatbot } from "./QAChatbot";
+import { XPathGenerator } from "./XPathGenerator";
 import { Tool } from "@/config/toolsConfig";
 
 interface ToolContentProps {
@@ -31,6 +32,27 @@ export function ToolContent({
   // Special case for chatbot
   if (selectedTool.isChatbot) {
     return <QAChatbot onConfigOpen={onConfigOpen} />;
+  }
+
+  // Special case for xpath generator
+  if (selectedTool.id === "xpath-generator") {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {selectedTool.useJiraIntegration && (
+            <JiraIntegration onStoryFetched={onJiraStoryFetched} />
+          )}
+          {selectedTool.useUrlIntegration && (
+            <UrlIntegration onUrlProcessed={onUrlProcessed} />
+          )}
+        </div>
+        <XPathGenerator 
+          jiraData={jiraStoryData}
+          urlData={urlData}
+          onConfigOpen={onConfigOpen}
+        />
+      </div>
+    );
   }
 
   return (

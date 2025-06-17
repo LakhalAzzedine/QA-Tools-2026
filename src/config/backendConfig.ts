@@ -1,4 +1,3 @@
-
 // Backend Configuration for QA Tools
 // This file contains all the prompts and endpoint configurations for each tool
 
@@ -72,10 +71,10 @@ export const toolPrompts: ToolPrompt[] = [
   {
     id: "xpath-generator",
     name: "XPath Generator",
-    systemPrompt: "You are an expert in web automation and XPath generation. Create robust, maintainable XPath selectors for web elements.",
-    userPromptTemplate: "Generate XPath selectors for the following web elements or page description:\n\n{content}\n\nProvide multiple XPath options (absolute, relative, and robust selectors).",
-    fileProcessingPrompt: "Analyze the uploaded HTML/XML files and generate appropriate XPath selectors for the elements found.",
-    urlProcessingPrompt: "Analyze the website structure at the provided URL and generate XPath selectors for key interactive elements like buttons, forms, links, and navigation elements."
+    systemPrompt: "You are an expert in web automation and XPath generation. Create robust, maintainable XPath selectors for web elements. Always provide multiple XPath options including absolute, relative, and robust selectors. Format your response with clear XPath expressions that can be easily copied and used in automation frameworks.",
+    userPromptTemplate: "Generate XPath selectors for the following HTML element(s):\n\n{content}\n\nProvide multiple XPath options:\n1. Absolute XPath\n2. Relative XPath using attributes\n3. Robust XPath using text or unique identifiers\n4. CSS selector equivalent (if applicable)\n\nFormat each selector clearly and explain the reliability of each approach.",
+    fileProcessingPrompt: "Analyze the uploaded HTML/XML files and generate appropriate XPath selectors for the interactive elements found. Focus on buttons, inputs, links, and form elements.",
+    urlProcessingPrompt: "Analyze the website structure at the provided URL and generate XPath selectors for key interactive elements like buttons, forms, links, and navigation elements. Prioritize elements that are commonly used in automation testing."
   },
   {
     id: "json-analyzer", 
