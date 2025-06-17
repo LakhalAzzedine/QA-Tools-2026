@@ -10,23 +10,43 @@ export interface ToolPrompt {
   fileProcessingPrompt?: string;
   urlProcessingPrompt?: string;
   jiraProcessingPrompt?: string;
+  endpointUrl?: string; // Tool-specific endpoint URL
 }
 
 export interface EndpointConfig {
   baseUrl: string;
-  processFilesEndpoint: string;
-  sendMessageEndpoint: string;
+  // Tool-specific endpoints
+  testGeneratorEndpoint: string;
+  acValidatorEndpoint: string;
+  xpathGeneratorEndpoint: string;
+  jsonAnalyzerEndpoint: string;
+  adaAnalyzerEndpoint: string;
+  lighthouseEndpoint: string;
+  chatbotEndpoint: string;
+  defectAnalyzerEndpoint: string;
+  karateScriptEndpoint: string;
+  smartspecScriptEndpoint: string;
   jiraIntegrationEndpoint: string;
   urlProcessingEndpoint: string;
+  fileProcessingEndpoint: string;
 }
 
 // Default endpoint configuration - easily configurable
 export const defaultEndpointConfig: EndpointConfig = {
   baseUrl: import.meta.env.VITE_BACKEND_URL || "http://localhost:3001",
-  processFilesEndpoint: "/ProcessFiles",
-  sendMessageEndpoint: "/SendMessage", 
-  jiraIntegrationEndpoint: "/FetchJiraStory",
-  urlProcessingEndpoint: "/ProcessUrl"
+  testGeneratorEndpoint: "/test-generator",
+  acValidatorEndpoint: "/ac-validator",
+  xpathGeneratorEndpoint: "/xpath-generator",
+  jsonAnalyzerEndpoint: "/json-analyzer",
+  adaAnalyzerEndpoint: "/ada-analyzer",
+  lighthouseEndpoint: "/lighthouse",
+  chatbotEndpoint: "/chatbot",
+  defectAnalyzerEndpoint: "/defect-analyzer",
+  karateScriptEndpoint: "/karate-script",
+  smartspecScriptEndpoint: "/smartspec-script",
+  jiraIntegrationEndpoint: "/jira-integration",
+  urlProcessingEndpoint: "/url-processing",
+  fileProcessingEndpoint: "/file-processing"
 };
 
 // Tool-specific prompts configuration
@@ -108,7 +128,7 @@ export const toolPrompts: ToolPrompt[] = [
     urlProcessingPrompt: "Analyze the API endpoints available at the provided URL and generate comprehensive Karate test scripts for testing these APIs."
   },
   {
-    id: "smartspec-script-writer", 
+    id: "smartspec-script-writer",
     name: "SmartSpec Script Writer",
     systemPrompt: "You are an expert in SmartSpec automation framework. Generate efficient SmartSpec automation scripts for web application testing.",
     userPromptTemplate: "Generate SmartSpec automation scripts for:\n\n{content}\n\nInclude page objects, test scenarios, and data management.",
@@ -121,6 +141,24 @@ export const toolPrompts: ToolPrompt[] = [
 // Helper function to get tool prompt by ID
 export const getToolPrompt = (toolId: string): ToolPrompt | undefined => {
   return toolPrompts.find(prompt => prompt.id === toolId);
+};
+
+// Helper function to get tool endpoint URL
+export const getToolEndpointUrl = (toolId: string, config: EndpointConfig): string => {
+  const endpoints: Record<string, string> = {
+    'test-generator': config.testGeneratorEndpoint,
+    'ac-validator': config.acValidatorEndpoint,
+    'xpath-generator': config.xpathGeneratorEndpoint,
+    'json-analyzer': config.jsonAnalyzerEndpoint,
+    'ada-analyzer': config.adaAnalyzerEndpoint,
+    'lighthouse': config.lighthouseEndpoint,
+    'chatbot': config.chatbotEndpoint,
+    'defect-analyzer': config.defectAnalyzerEndpoint,
+    'karate-script-writer': config.karateScriptEndpoint,
+    'smartspec-script-writer': config.smartspecScriptEndpoint
+  };
+  
+  return `${config.baseUrl}${endpoints[toolId] || ''}`;
 };
 
 // Helper function to build complete prompt with context

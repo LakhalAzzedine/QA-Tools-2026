@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { MessageCircle, Send, User, Bot } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getToolPrompt, buildPromptWithContext } from "@/config/backendConfig";
+import { getToolPrompt, buildPromptWithContext, getToolEndpointUrl, defaultEndpointConfig } from "@/config/backendConfig";
 
 interface Message {
   id: string;
@@ -39,7 +39,7 @@ export function QAChatbot({ onConfigOpen }: QAChatbotProps) {
     const welcomeMessage: Message = {
       id: 'welcome',
       role: 'assistant',
-      content: "Hello! I'm your QA Assistant. Ask me anything about testing methodologies, automation frameworks, best practices, or any QA-related questions you have.",
+      content: "Hello! I'm your QA Assistant powered by your SVC cluster. Ask me anything about testing methodologies, automation frameworks, best practices, or any QA-related questions you have.",
       timestamp: new Date()
     };
     setMessages([welcomeMessage]);
@@ -62,19 +62,22 @@ export function QAChatbot({ onConfigOpen }: QAChatbotProps) {
     try {
       // Get saved configuration
       const savedConfig = localStorage.getItem("qaToolsEndpointConfig");
-      let baseUrl = "http://localhost:3001";
-      let sendMessageEndpoint = "/SendMessage";
-
+      let config = defaultEndpointConfig;
+      
       if (savedConfig) {
-        const config = JSON.parse(savedConfig);
-        baseUrl = config.baseUrl || baseUrl;
-        sendMessageEndpoint = config.sendMessageEndpoint || sendMessageEndpoint;
+        const parsedConfig = JSON.parse(savedConfig);
+        config = { ...defaultEndpointConfig, ...parsedConfig };
       }
 
+      // Get chatbot endpoint URL
+      const endpointUrl = getToolEndpointUrl('chatbot', config);
+      
       // Build the prompt using the QA Chatbot configuration
       const enhancedPrompt = buildPromptWithContext('chatbot', userMessage.content);
 
-      const response = await fetch(`${baseUrl}${sendMessageEndpoint}`, {
+      console.log(`Sending message to chatbot endpoint: ${endpointUrl}`);
+
+      const response = await fetch(endpointUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -82,7 +85,11 @@ export function QAChatbot({ onConfigOpen }: QAChatbotProps) {
         body: JSON.stringify({
           tool: 'chatbot',
           prompt: enhancedPrompt,
-          conversationHistory: messages.slice(-5) // Send last 5 messages for context
+          message: userMessage.content,
+          conversationHistory: messages.slice(-5).map(msg => ({
+            role: msg.role,
+            content: msg.content
+          }))
         })
       });
 
@@ -91,7 +98,7 @@ export function QAChatbot({ onConfigOpen }: QAChatbotProps) {
       }
 
       const data = await response.json();
-      const assistantResponse = data.response || "I apologize, but I couldn't process your request right now. Please try again.";
+      const assistantResponse = data.response || data.result || data.message || "I apologize, but I couldn't process your request right now. Please try again.";
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -108,7 +115,7 @@ export function QAChatbot({ onConfigOpen }: QAChatbotProps) {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: "I'm sorry, I couldn't connect to the QA service right now. Please check your endpoint configuration and try again.",
+        content: "I'm sorry, I couldn't connect to the QA service right now. Please check your SVC cluster configuration and try again.",
         timestamp: new Date()
       };
 
@@ -116,7 +123,7 @@ export function QAChatbot({ onConfigOpen }: QAChatbotProps) {
       
       toast({
         title: "Connection Error",
-        description: "Could not connect to QA service. Check your endpoint configuration.",
+        description: "Could not connect to SVC cluster. Check your endpoint configuration.",
         variant: "destructive",
         duration: 5000,
       });
@@ -136,7 +143,7 @@ export function QAChatbot({ onConfigOpen }: QAChatbotProps) {
     const welcomeMessage: Message = {
       id: 'welcome',
       role: 'assistant',
-      content: "Hello! I'm your QA Assistant. Ask me anything about testing methodologies, automation frameworks, best practices, or any QA-related questions you have.",
+      content: "Hello! I'm your QA Assistant powered by your SVC cluster. Ask me anything about testing methodologies, automation frameworks, best practices, or any QA-related questions you have.",
       timestamp: new Date()
     };
     setMessages([welcomeMessage]);
@@ -151,7 +158,7 @@ export function QAChatbot({ onConfigOpen }: QAChatbotProps) {
               <MessageCircle className="w-4 h-4 text-white" />
             </div>
             <span>QA Chatbot</span>
-            <Badge variant="secondary">AI Assistant</Badge>
+            <Badge variant="secondary">SVC Powered</Badge>
           </div>
           <div className="flex space-x-2">
             <Button variant="outline" size="sm" onClick={clearChat}>

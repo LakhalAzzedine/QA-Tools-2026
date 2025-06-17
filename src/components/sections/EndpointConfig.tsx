@@ -69,13 +69,13 @@ export function EndpointConfig({ onConfigUpdate }: EndpointConfigProps) {
         setConnectionStatus("connected");
         toast({
           title: "Connection Successful",
-          description: "Successfully connected to the backend service.",
+          description: "Successfully connected to the SVC cluster.",
         });
       } else {
         setConnectionStatus("failed");
         toast({
           title: "Connection Failed",
-          description: `Backend responded with status: ${response.status}`,
+          description: `SVC cluster responded with status: ${response.status}`,
           variant: "destructive",
         });
       }
@@ -83,7 +83,7 @@ export function EndpointConfig({ onConfigUpdate }: EndpointConfigProps) {
       setConnectionStatus("failed");
       toast({
         title: "Connection Error",
-        description: "Failed to connect to backend service. Check the base URL.",
+        description: "Failed to connect to SVC cluster. Check the base URL.",
         variant: "destructive",
       });
     } finally {
@@ -96,7 +96,7 @@ export function EndpointConfig({ onConfigUpdate }: EndpointConfigProps) {
       <CardHeader>
         <CardTitle className="flex items-center space-x-2">
           <Settings className="w-5 h-5" />
-          <span>Backend Endpoint Configuration</span>
+          <span>SVC Cluster Endpoint Configuration</span>
           {connectionStatus !== "unknown" && (
             <Badge variant={connectionStatus === "connected" ? "default" : "destructive"}>
               {connectionStatus === "connected" ? "Connected" : "Failed"}
@@ -104,59 +104,142 @@ export function EndpointConfig({ onConfigUpdate }: EndpointConfigProps) {
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="base-url">Base URL</Label>
-            <Input
-              id="base-url"
-              placeholder="http://localhost:3001"
-              value={config.baseUrl}
-              onChange={(e) => handleConfigChange("baseUrl", e.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">
-              Main backend service URL
-            </p>
-          </div>
+      <CardContent className="space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="base-url">SVC Cluster Base URL</Label>
+          <Input
+            id="base-url"
+            placeholder="https://your-gke-cluster.com"
+            value={config.baseUrl}
+            onChange={(e) => handleConfigChange("baseUrl", e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">
+            Main SVC cluster URL deployed on GKE
+          </p>
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="process-files">Process Files Endpoint</Label>
-            <Input
-              id="process-files"
-              placeholder="/ProcessFiles"
-              value={config.processFilesEndpoint}
-              onChange={(e) => handleConfigChange("processFilesEndpoint", e.target.value)}
-            />
-          </div>
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Tool-Specific Endpoints</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="test-generator">Test Generator</Label>
+              <Input
+                id="test-generator"
+                placeholder="/test-generator"
+                value={config.testGeneratorEndpoint}
+                onChange={(e) => handleConfigChange("testGeneratorEndpoint", e.target.value)}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="send-message">Send Message Endpoint</Label>
-            <Input
-              id="send-message"
-              placeholder="/SendMessage"
-              value={config.sendMessageEndpoint}
-              onChange={(e) => handleConfigChange("sendMessageEndpoint", e.target.value)}
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="ac-validator">AC Validator</Label>
+              <Input
+                id="ac-validator"
+                placeholder="/ac-validator"
+                value={config.acValidatorEndpoint}
+                onChange={(e) => handleConfigChange("acValidatorEndpoint", e.target.value)}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="jira-integration">Jira Integration Endpoint</Label>
-            <Input
-              id="jira-integration"
-              placeholder="/FetchJiraStory"
-              value={config.jiraIntegrationEndpoint}
-              onChange={(e) => handleConfigChange("jiraIntegrationEndpoint", e.target.value)}
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="xpath-generator">XPath Generator</Label>
+              <Input
+                id="xpath-generator"
+                placeholder="/xpath-generator"
+                value={config.xpathGeneratorEndpoint}
+                onChange={(e) => handleConfigChange("xpathGeneratorEndpoint", e.target.value)}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="url-processing">URL Processing Endpoint</Label>
-            <Input
-              id="url-processing"
-              placeholder="/ProcessUrl"
-              value={config.urlProcessingEndpoint}
-              onChange={(e) => handleConfigChange("urlProcessingEndpoint", e.target.value)}
-            />
+            <div className="space-y-2">
+              <Label htmlFor="json-analyzer">JSON Analyzer</Label>
+              <Input
+                id="json-analyzer"
+                placeholder="/json-analyzer"
+                value={config.jsonAnalyzerEndpoint}
+                onChange={(e) => handleConfigChange("jsonAnalyzerEndpoint", e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="ada-analyzer">ADA Analyzer</Label>
+              <Input
+                id="ada-analyzer"
+                placeholder="/ada-analyzer"
+                value={config.adaAnalyzerEndpoint}
+                onChange={(e) => handleConfigChange("adaAnalyzerEndpoint", e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="lighthouse">Lighthouse</Label>
+              <Input
+                id="lighthouse"
+                placeholder="/lighthouse"
+                value={config.lighthouseEndpoint}
+                onChange={(e) => handleConfigChange("lighthouseEndpoint", e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="chatbot">QA Chatbot</Label>
+              <Input
+                id="chatbot"
+                placeholder="/chatbot"
+                value={config.chatbotEndpoint}
+                onChange={(e) => handleConfigChange("chatbotEndpoint", e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="defect-analyzer">Defect Analyzer</Label>
+              <Input
+                id="defect-analyzer"
+                placeholder="/defect-analyzer"
+                value={config.defectAnalyzerEndpoint}
+                onChange={(e) => handleConfigChange("defectAnalyzerEndpoint", e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="karate-script">Karate Script Writer</Label>
+              <Input
+                id="karate-script"
+                placeholder="/karate-script"
+                value={config.karateScriptEndpoint}
+                onChange={(e) => handleConfigChange("karateScriptEndpoint", e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="smartspec-script">SmartSpec Script Writer</Label>
+              <Input
+                id="smartspec-script"
+                placeholder="/smartspec-script"
+                value={config.smartspecScriptEndpoint}
+                onChange={(e) => handleConfigChange("smartspecScriptEndpoint", e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="jira-integration">Jira Integration</Label>
+              <Input
+                id="jira-integration"
+                placeholder="/jira-integration"
+                value={config.jiraIntegrationEndpoint}
+                onChange={(e) => handleConfigChange("jiraIntegrationEndpoint", e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="url-processing">URL Processing</Label>
+              <Input
+                id="url-processing"
+                placeholder="/url-processing"
+                value={config.urlProcessingEndpoint}
+                onChange={(e) => handleConfigChange("urlProcessingEndpoint", e.target.value)}
+              />
+            </div>
           </div>
         </div>
 
@@ -181,13 +264,13 @@ export function EndpointConfig({ onConfigUpdate }: EndpointConfigProps) {
           <div className="flex items-start space-x-2">
             <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
             <div className="text-sm">
-              <h4 className="font-medium text-blue-800 mb-2">Backend Integration Guide</h4>
+              <h4 className="font-medium text-blue-800 mb-2">SVC Cluster Integration Guide</h4>
               <ul className="space-y-1 text-blue-700">
-                <li>• Set your backend base URL (e.g., https://your-api.com)</li>
-                <li>• Ensure your backend implements the required endpoints</li>
-                <li>• Each tool will send prompts automatically to these endpoints</li>
-                <li>• File uploads go to ProcessFiles, prompts to SendMessage</li>
-                <li>• Test the connection to verify your backend is accessible</li>
+                <li>• Set your GKE cluster base URL (e.g., https://your-cluster.com)</li>
+                <li>• Configure individual endpoint paths for each QA tool</li>
+                <li>• Each tool will send requests to its specific endpoint on your cluster</li>
+                <li>• Test the connection to verify your SVC cluster is accessible</li>
+                <li>• Ensure your cluster accepts POST requests with JSON payloads</li>
               </ul>
             </div>
           </div>

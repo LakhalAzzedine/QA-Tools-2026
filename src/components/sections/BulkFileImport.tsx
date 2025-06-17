@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Upload, FileText, X, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getToolPrompt, buildPromptWithContext } from "@/config/backendConfig";
+import { getToolPrompt, buildPromptWithContext, getToolEndpointUrl, defaultEndpointConfig } from "@/config/backendConfig";
 
 interface BulkFileImportProps {
   onFilesProcessed: (files: File[]) => void;
@@ -39,17 +39,18 @@ export function BulkFileImport({ onFilesProcessed, toolId, toolName, jiraData, u
     
     setIsProcessing(true);
     try {
-      // Get the saved endpoint configuration
+      // Get saved configuration
       const savedConfig = localStorage.getItem("qaToolsEndpointConfig");
-      let baseUrl = "http://localhost:3001";
-      let processFilesEndpoint = "/ProcessFiles";
+      let config = defaultEndpointConfig;
       
       if (savedConfig) {
-        const config = JSON.parse(savedConfig);
-        baseUrl = config.baseUrl || baseUrl;
-        processFilesEndpoint = config.processFilesEndpoint || processFilesEndpoint;
+        const parsedConfig = JSON.parse(savedConfig);
+        config = { ...defaultEndpointConfig, ...parsedConfig };
       }
 
+      // Get tool-specific endpoint URL
+      const endpointUrl = getToolEndpointUrl(toolId, config);
+      
       // Build the context-aware prompt using the new system
       const toolPrompt = getToolPrompt(toolId);
       const contextualPrompt = buildPromptWithContext(
@@ -60,7 +61,7 @@ export function BulkFileImport({ onFilesProcessed, toolId, toolName, jiraData, u
         importedFiles.map(f => f.name)
       );
 
-      // Send files to backend for automatic processing
+      // Send files to SVC cluster for processing
       const formData = new FormData();
       importedFiles.forEach((file, index) => {
         formData.append(`file_${index}`, file);
@@ -78,7 +79,9 @@ export function BulkFileImport({ onFilesProcessed, toolId, toolName, jiraData, u
         formData.append('urlData', JSON.stringify(urlData));
       }
       
-      const response = await fetch(`${baseUrl}${processFilesEndpoint}`, {
+      console.log(`Processing files with ${toolName} via endpoint: ${endpointUrl}`);
+      
+      const response = await fetch(endpointUrl, {
         method: 'POST',
         body: formData
       });
@@ -91,7 +94,7 @@ export function BulkFileImport({ onFilesProcessed, toolId, toolName, jiraData, u
       
       toast({
         title: `${toolName} Processing Complete`,
-        description: data.message || "Files processed successfully with AI analysis",
+        description: data.message || data.result || "Files processed successfully with AI analysis",
         duration: 10000,
       });
       
@@ -101,7 +104,7 @@ export function BulkFileImport({ onFilesProcessed, toolId, toolName, jiraData, u
       console.error('Error processing files:', error);
       toast({
         title: "Processing Error",
-        description: "Could not process files. Check backend connection and endpoint configuration.",
+        description: "Could not process files. Check SVC cluster connection and endpoint configuration.",
         variant: "destructive",
       });
     } finally {
@@ -174,7 +177,7 @@ export function BulkFileImport({ onFilesProcessed, toolId, toolName, jiraData, u
         </Button>
 
         <div className="text-xs text-muted-foreground">
-          <p>Files will be automatically processed using AI-powered prompts specific to {toolName}.</p>
+          <p>Files will be processed by your SVC cluster using the {toolName} endpoint.</p>
         </div>
       </CardContent>
     </Card>

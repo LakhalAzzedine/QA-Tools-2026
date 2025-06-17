@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { defaultEndpointConfig } from "@/config/backendConfig";
 
 interface JiraIntegrationProps {
   onStoryFetched: (storyData: any) => void;
@@ -23,26 +24,35 @@ export function JiraIntegration({ onStoryFetched }: JiraIntegrationProps) {
     
     setIsLoading(true);
     try {
-      // TODO: Implement actual Jira API integration
-      // This would require backend API key management and CORS handling
-      console.log(`Fetching Jira story: ${jiraStoryId}`);
+      // Get saved configuration
+      const savedConfig = localStorage.getItem("qaToolsEndpointConfig");
+      let config = defaultEndpointConfig;
       
-      // Simulated response for demo
-      const mockStoryData = {
-        id: jiraStoryId,
-        title: "Sample User Story",
-        description: "As a user, I want to be able to...",
-        acceptanceCriteria: [
-          "Given the user is on the login page",
-          "When they enter valid credentials", 
-          "Then they should be redirected to dashboard"
-        ],
-        status: "In Progress",
-        assignee: "John Doe"
-      };
+      if (savedConfig) {
+        const parsedConfig = JSON.parse(savedConfig);
+        config = { ...defaultEndpointConfig, ...parsedConfig };
+      }
+
+      console.log(`Fetching Jira story: ${jiraStoryId} from ${config.baseUrl}${config.jiraIntegrationEndpoint}`);
       
-      setFetchedStory(mockStoryData);
-      onStoryFetched(mockStoryData);
+      const response = await fetch(`${config.baseUrl}${config.jiraIntegrationEndpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          storyId: jiraStoryId.trim()
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const storyData = await response.json();
+      
+      setFetchedStory(storyData);
+      onStoryFetched(storyData);
       
       toast({
         title: "Story Fetched",
@@ -53,7 +63,7 @@ export function JiraIntegration({ onStoryFetched }: JiraIntegrationProps) {
       console.error('Error fetching Jira story:', error);
       toast({
         title: "Error",
-        description: "Could not fetch Jira story. Check API configuration.",
+        description: "Could not fetch Jira story. Check SVC cluster configuration and connectivity.",
         variant: "destructive",
       });
     } finally {
@@ -92,26 +102,34 @@ export function JiraIntegration({ onStoryFetched }: JiraIntegrationProps) {
         {fetchedStory && (
           <div className="space-y-3 p-3 bg-muted rounded">
             <div className="flex items-center justify-between">
-              <h4 className="font-medium">{fetchedStory.title}</h4>
+              <h4 className="font-medium">{fetchedStory.title || fetchedStory.summary}</h4>
               <Badge>{fetchedStory.status}</Badge>
             </div>
             <p className="text-sm text-muted-foreground">{fetchedStory.description}</p>
             
-            <div>
-              <h5 className="text-sm font-medium mb-2">Acceptance Criteria:</h5>
-              <ul className="space-y-1">
-                {fetchedStory.acceptanceCriteria.map((ac: string, index: number) => (
-                  <li key={index} className="text-sm pl-2 border-l-2 border-blue-500">
-                    {ac}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {fetchedStory.acceptanceCriteria && fetchedStory.acceptanceCriteria.length > 0 && (
+              <div>
+                <h5 className="text-sm font-medium mb-2">Acceptance Criteria:</h5>
+                <ul className="space-y-1">
+                  {fetchedStory.acceptanceCriteria.map((ac: string, index: number) => (
+                    <li key={index} className="text-sm pl-2 border-l-2 border-blue-500">
+                      {ac}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {fetchedStory.assignee && (
+              <p className="text-sm">
+                <span className="font-medium">Assignee:</span> {fetchedStory.assignee}
+              </p>
+            )}
           </div>
         )}
 
         <div className="text-xs text-muted-foreground">
-          <p>Note: Jira API integration requires backend configuration with API tokens and proper CORS handling.</p>
+          <p>Connects to your SVC cluster's Jira integration endpoint to fetch real story data.</p>
         </div>
       </CardContent>
     </Card>
