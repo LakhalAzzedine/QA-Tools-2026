@@ -81,8 +81,7 @@ export function ToolContent({
         </div>
         <TestGenerator 
           jiraData={jiraStoryData}
-          importedFiles={importedFiles}
-          onFilesProcessed={onFilesProcessed}
+          onConfigOpen={() => {}}
         />
       </div>
     );
