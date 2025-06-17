@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -60,7 +61,11 @@ export function EndpointsMonitor() {
       setEndpoints(data.endpoints || []);
       
       // Extract unique teams from endpoints with proper typing
-      const uniqueTeams = [...new Set((data.endpoints || []).map((endpoint: Endpoint) => endpoint.team).filter((team: string) => typeof team === 'string'))];
+      const endpointsData = data.endpoints || [];
+      const teamNames = endpointsData
+        .map((endpoint: Endpoint) => endpoint.team)
+        .filter((team: any): team is string => typeof team === 'string');
+      const uniqueTeams: string[] = [...new Set(teamNames)];
       setTeams(uniqueTeams);
 
       toast({
