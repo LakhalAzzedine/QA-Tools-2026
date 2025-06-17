@@ -135,6 +135,13 @@ export function QATools() {
     setInput("");
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    if (value.length <= 9000) {
+      setInput(value);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Horizontal Toolbar */}
@@ -182,12 +189,18 @@ export function QATools() {
               <p className="text-sm text-muted-foreground">{selectedTool.description}</p>
               
               <div className="space-y-2">
-                <label className="text-sm font-medium">Input Prompt:</label>
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-medium">Input Prompt:</label>
+                  <span className="text-xs text-muted-foreground">
+                    {input.length}/9000 characters
+                  </span>
+                </div>
                 <Textarea
                   placeholder={`Enter your ${selectedTool.name.toLowerCase()} request...`}
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
+                  onChange={handleInputChange}
                   className="min-h-[100px]"
+                  maxLength={9000}
                 />
               </div>
 
