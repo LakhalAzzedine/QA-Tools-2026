@@ -71,10 +71,10 @@ export function BulkFileImport({ onFilesProcessed, toolId, toolName }: BulkFileI
   };
 
   return (
-    <Card className="h-full">
+    <Card className="h-full aspect-square">
       <CardHeader>
         <CardTitle className="flex items-center space-x-2">
-          <Upload className="w-5 h-5" />
+          <Upload className="w-5 h-5 text-gray-500" />
           <span>Import Files</span>
         </CardTitle>
       </CardHeader>

@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -194,17 +193,17 @@ export function QATools() {
 
     return (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <BulkFileImport 
-          onFilesProcessed={setImportedFiles} 
-          toolId={selectedTool.id}
-          toolName={selectedTool.name}
-        />
         {selectedTool.useJiraIntegration && (
           <JiraIntegration onStoryFetched={setJiraStoryData} />
         )}
         {selectedTool.useUrlIntegration && (
           <UrlIntegration onUrlProcessed={setUrlData} />
         )}
+        <BulkFileImport 
+          onFilesProcessed={setImportedFiles} 
+          toolId={selectedTool.id}
+          toolName={selectedTool.name}
+        />
       </div>
     );
   };
