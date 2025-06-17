@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -99,5 +100,26 @@
 
   body {
     @apply bg-background text-foreground;
+    background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 25%, #3b82f6 75%, #2563eb 100%);
+    min-height: 100vh;
   }
+}
+
+/* COS QA Gradient Animation */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.cos-qa-gradient {
+  background: linear-gradient(-45deg, #8b5cf6, #a855f7, #3b82f6, #2563eb);
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
 }

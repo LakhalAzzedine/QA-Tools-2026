@@ -14,7 +14,8 @@ import {
   Gauge, 
   MessageCircle, 
   Bug,
-  FileCode
+  FileCode,
+  FileText
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -81,6 +82,13 @@ const tools = [
     description: "Generate Karate API test scripts",
     icon: FileCode,
     color: "bg-teal-500"
+  },
+  {
+    id: "smartspec-script-writer",
+    name: "SmartSpec Script Writer",
+    description: "Generate SmartSpec automation scripts",
+    icon: FileText,
+    color: "bg-cyan-500"
   }
 ];
 
