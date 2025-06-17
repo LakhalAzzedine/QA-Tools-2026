@@ -22,7 +22,7 @@ export interface EndpointConfig {
 
 // Default endpoint configuration - easily configurable
 export const defaultEndpointConfig: EndpointConfig = {
-  baseUrl: process.env.REACT_APP_BACKEND_URL || "http://localhost:3001",
+  baseUrl: import.meta.env.VITE_BACKEND_URL || "http://localhost:3001",
   processFilesEndpoint: "/ProcessFiles",
   sendMessageEndpoint: "/SendMessage", 
   jiraIntegrationEndpoint: "/FetchJiraStory",
