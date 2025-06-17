@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { FileImport } from "./FileImport";
 import { JiraIntegration } from "./JiraIntegration";
 import { BulkFileImport } from "./BulkFileImport";
+import { UrlIntegration } from "./UrlIntegration";
 
 const tools = [
   {
@@ -27,7 +29,8 @@ const tools = [
     description: "Generate comprehensive test cases using AI",
     icon: FileCheck,
     color: "bg-blue-500",
-    hasSpecialLayout: true
+    hasSpecialLayout: true,
+    useJiraIntegration: true
   },
   {
     id: "ac-validator",
@@ -35,42 +38,53 @@ const tools = [
     description: "Validate acceptance criteria completeness",
     icon: CheckSquare,
     color: "bg-green-500",
-    hasSpecialLayout: true
+    hasSpecialLayout: true,
+    useJiraIntegration: true
   },
   {
     id: "xpath-generator",
     name: "XPath Generator",
     description: "Create reliable XPath selectors",
     icon: MousePointer,
-    color: "bg-purple-500"
+    color: "bg-purple-500",
+    hasSpecialLayout: true,
+    useUrlIntegration: true
   },
   {
     id: "json-analyzer",
     name: "JSON Analyzer",
     description: "Analyze and validate JSON structures",
     icon: Code,
-    color: "bg-orange-500"
+    color: "bg-orange-500",
+    hasSpecialLayout: true,
+    useUrlIntegration: true
   },
   {
     id: "ada-analyzer",
     name: "ADA Analyzer",
     description: "Check accessibility compliance",
     icon: Accessibility,
-    color: "bg-indigo-500"
+    color: "bg-indigo-500",
+    hasSpecialLayout: true,
+    useUrlIntegration: true
   },
   {
     id: "lighthouse",
     name: "Lighthouse",
     description: "Performance and quality insights",
     icon: Gauge,
-    color: "bg-yellow-500"
+    color: "bg-yellow-500",
+    hasSpecialLayout: true,
+    useUrlIntegration: true
   },
   {
     id: "chatbot",
     name: "QA Chatbot",
     description: "AI assistant for QA questions",
     icon: MessageCircle,
-    color: "bg-pink-500"
+    color: "bg-pink-500",
+    hasSpecialLayout: true,
+    useUrlIntegration: true
   },
   {
     id: "defect-analyzer",
@@ -78,7 +92,8 @@ const tools = [
     description: "Identify root causes of defects",
     icon: Bug,
     color: "bg-red-500",
-    hasSpecialLayout: true
+    hasSpecialLayout: true,
+    useJiraIntegration: true
   },
   {
     id: "karate-script-writer",
@@ -86,7 +101,8 @@ const tools = [
     description: "Generate Karate API test scripts",
     icon: FileCode,
     color: "bg-teal-500",
-    hasSpecialLayout: true
+    hasSpecialLayout: true,
+    useJiraIntegration: true
   },
   {
     id: "smartspec-script-writer",
@@ -94,7 +110,8 @@ const tools = [
     description: "Generate SmartSpec automation scripts",
     icon: FileText,
     color: "bg-cyan-500",
-    hasSpecialLayout: true
+    hasSpecialLayout: true,
+    useJiraIntegration: true
   }
 ];
 
@@ -104,6 +121,7 @@ export function QATools() {
   const [isLoading, setIsLoading] = useState(false);
   const [importedFiles, setImportedFiles] = useState<File[]>([]);
   const [jiraStoryData, setJiraStoryData] = useState<any>(null);
+  const [urlData, setUrlData] = useState<any>(null);
   const { toast } = useToast();
 
   const handleSendPrompt = async () => {
@@ -181,7 +199,12 @@ export function QATools() {
           toolId={selectedTool.id}
           toolName={selectedTool.name}
         />
-        <JiraIntegration onStoryFetched={setJiraStoryData} />
+        {selectedTool.useJiraIntegration && (
+          <JiraIntegration onStoryFetched={setJiraStoryData} />
+        )}
+        {selectedTool.useUrlIntegration && (
+          <UrlIntegration onUrlProcessed={setUrlData} />
+        )}
       </div>
     );
   };
@@ -209,8 +232,11 @@ export function QATools() {
                 <selectedTool.icon className="w-4 h-4 text-white" />
               </div>
               <span>{selectedTool.name}</span>
-              {jiraStoryData && (
+              {jiraStoryData && selectedTool.useJiraIntegration && (
                 <Badge variant="secondary">Jira: {jiraStoryData.id}</Badge>
+              )}
+              {urlData && selectedTool.useUrlIntegration && (
+                <Badge variant="secondary">URL: {urlData.title}</Badge>
               )}
               {importedFiles.length > 0 && (
                 <Badge variant="outline">{importedFiles.length} files</Badge>
@@ -220,14 +246,14 @@ export function QATools() {
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">{selectedTool.description}</p>
             <div className="text-sm text-blue-600 bg-blue-50 p-3 rounded">
-              <p>This tool uses automatic processing. Import your files and fetch Jira data - no manual prompt needed!</p>
+              <p>This tool uses automatic processing. Import your files and {selectedTool.useJiraIntegration ? 'fetch Jira data' : 'process URLs'} - no manual prompt needed!</p>
             </div>
           </CardContent>
         </Card>
       );
     }
 
-    // Regular tool interface with manual prompt
+    // Regular tool interface with manual prompt (not needed anymore as all tools now have special layout)
     return (
       <Card>
         <CardHeader>
@@ -308,7 +334,7 @@ export function QATools() {
         </CardContent>
       </Card>
 
-      {/* File Import and Jira Integration */}
+      {/* File Import and Integration Sections */}
       {selectedTool && (
         <>
           {renderSpecialLayout()}
