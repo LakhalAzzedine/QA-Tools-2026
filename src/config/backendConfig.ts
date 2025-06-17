@@ -1,4 +1,4 @@
-// Backend Configuration for QA Tools
+git merge --allow-unrelated-histories origin/maingit merge --allow-unrelated-histories origin/main// Backend Configuration for QA Tools
 // This file contains all the prompts and endpoint configurations for each tool
 
 export interface ToolPrompt {
